@@ -1,12 +1,13 @@
 import { Router } from "express";
-import { registerUser, loginUser } from "../controllers/authController";
+import { registerUser, loginUser, getProfile, googleLogin } from "../controllers/authController";
 import { protect } from "../middleware/authMiddleware";
-import { getProfile } from "../controllers/authController";
 const router = Router();
 
 router.post("/register", registerUser);
 
 router.post("/login", loginUser );
+
+router.post("/google", googleLogin);
 
 router.get(
   "/profile",

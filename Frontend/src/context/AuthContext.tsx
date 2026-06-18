@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { loginUser, registerUser } from '../services/authService';
+import { loginUser, registerUser, googleLogin } from '../services/authService';
 
 export interface User {
   id: string;
@@ -14,6 +14,7 @@ interface AuthContextType {
   loading: boolean;
   login: (data: any) => Promise<void>;
   register: (data: any) => Promise<void>;
+  googleLoginWithCredential: (credential: string) => Promise<void>;
   logout: () => void;
 }
 
@@ -51,6 +52,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     localStorage.setItem('studymate_user', JSON.stringify(response.user));
   };
 
+  const googleLoginWithCredential = async (credential: string) => {
+    const response = await googleLogin(credential);
+    setToken(response.token);
+    setUser(response.user);
+    localStorage.setItem('studymate_token', response.token);
+    localStorage.setItem('studymate_user', JSON.stringify(response.user));
+  };
+
   const logout = () => {
     setToken(null);
     setUser(null);
@@ -59,7 +68,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, isAuthenticated: !!token, loading, login, register, logout }}>
+    <AuthContext.Provider value={{ user, token, isAuthenticated: !!token, loading, login, register, googleLoginWithCredential, logout }}>
       {children}
     </AuthContext.Provider>
   );

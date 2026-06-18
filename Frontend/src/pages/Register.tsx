@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Mail, Lock, User, Sparkles, ShieldCheck } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { GoogleLogin } from '@react-oauth/google';
 
 const Register = () => {
   const [name, setName] = useState('');
@@ -11,7 +12,7 @@ const Register = () => {
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   
-  const { register } = useAuth();
+  const { register, googleLoginWithCredential } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -34,6 +35,21 @@ const Register = () => {
       navigate('/home');
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to register');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleGoogleSuccess = async (credentialResponse: any) => {
+    try {
+      setIsSubmitting(true);
+      setError('');
+      if (credentialResponse.credential) {
+        await googleLoginWithCredential(credentialResponse.credential);
+        navigate('/home');
+      }
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to sign up with Google');
     } finally {
       setIsSubmitting(false);
     }
@@ -116,6 +132,22 @@ const Register = () => {
               'Create Account'
             )}
           </button>
+
+          <div className="relative flex items-center py-2">
+            <div className="flex-grow border-t border-gray-700"></div>
+            <span className="flex-shrink-0 mx-4 text-gray-500 text-sm">Or continue with</span>
+            <div className="flex-grow border-t border-gray-700"></div>
+          </div>
+
+          <div className="flex justify-center">
+            <GoogleLogin
+              onSuccess={handleGoogleSuccess}
+              onError={() => setError('Google Signup Failed')}
+              theme="filled_black"
+              shape="pill"
+              text="signup_with"
+            />
+          </div>
         </form>
 
         <p className="mt-6 text-center text-gray-400">

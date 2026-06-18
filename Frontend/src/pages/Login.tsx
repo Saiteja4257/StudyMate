@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Mail, Lock, Eye, EyeOff, Sparkles } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { GoogleLogin } from '@react-oauth/google';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -10,7 +11,7 @@ const Login = () => {
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   
-  const { login } = useAuth();
+  const { login, googleLoginWithCredential } = useAuth();
   const navigate = useNavigate();
 
 
@@ -29,6 +30,21 @@ const Login = () => {
       navigate('/home');
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to login');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleGoogleSuccess = async (credentialResponse: any) => {
+    try {
+      setIsSubmitting(true);
+      setError('');
+      if (credentialResponse.credential) {
+        await googleLoginWithCredential(credentialResponse.credential);
+        navigate('/home');
+      }
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to login with Google');
     } finally {
       setIsSubmitting(false);
     }
@@ -96,6 +112,21 @@ const Login = () => {
               'Sign In'
             )}
           </button>
+
+          <div className="relative flex items-center py-2">
+            <div className="flex-grow border-t border-gray-700"></div>
+            <span className="flex-shrink-0 mx-4 text-gray-500 text-sm">Or continue with</span>
+            <div className="flex-grow border-t border-gray-700"></div>
+          </div>
+
+          <div className="flex justify-center">
+            <GoogleLogin
+              onSuccess={handleGoogleSuccess}
+              onError={() => setError('Google Login Failed')}
+              theme="filled_black"
+              shape="pill"
+            />
+          </div>
         </form>
 
         <p className="mt-6 text-center text-gray-400">
