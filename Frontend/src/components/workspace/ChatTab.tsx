@@ -33,6 +33,7 @@ const ChatTab: React.FC<ChatTabProps> = ({ document, onDocumentUpdate }) => {
   const [deletingIndex, setDeletingIndex] = useState<number | null>(null);
   const [confirmModal, setConfirmModal] = useState<{isOpen: boolean, index: number | null}>({ isOpen: false, index: null });
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [contextMenu, setContextMenu] = useState<{isOpen: boolean, x: number, y: number, index: number | null}>({ isOpen: false, x: 0, y: 0, index: null });
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -43,6 +44,15 @@ const ChatTab: React.FC<ChatTabProps> = ({ document, onDocumentUpdate }) => {
   useEffect(() => {
     scrollToBottom();
   }, [messages, selectedIndex]);
+
+  // Close context menu when clicking anywhere
+  useEffect(() => {
+    const handleClick = () => setContextMenu(prev => ({ ...prev, isOpen: false }));
+    if (contextMenu.isOpen) {
+      window.document.addEventListener('click', handleClick);
+      return () => window.document.removeEventListener('click', handleClick);
+    }
+  }, [contextMenu.isOpen]);
 
   // If chats length changes (like after a delete) and we're out of bounds, fix it
   useEffect(() => {
@@ -66,6 +76,17 @@ const ChatTab: React.FC<ChatTabProps> = ({ document, onDocumentUpdate }) => {
     setMessages(chats[index].messages);
     setSelectedIndex(index);
     setMobileMenuOpen(false);
+    setContextMenu(prev => ({ ...prev, isOpen: false }));
+  };
+
+  const handleContextMenu = (e: React.MouseEvent, index: number) => {
+    e.preventDefault();
+    setContextMenu({
+      isOpen: true,
+      x: e.pageX,
+      y: e.pageY,
+      index
+    });
   };
 
   const handleDeleteClick = (index: number, e: React.MouseEvent) => {
@@ -203,6 +224,7 @@ const ChatTab: React.FC<ChatTabProps> = ({ document, onDocumentUpdate }) => {
               <div 
                 key={idx} 
                 onClick={() => handleOpenChat(idx)} 
+                onContextMenu={(e) => handleContextMenu(e, idx)}
                 className={`p-3 rounded-xl cursor-pointer transition-colors group flex items-start gap-3 ${selectedIndex === idx ? 'bg-white/[0.08] text-white' : 'text-gray-400 hover:bg-white/[0.04]'}`}
               >
                 <MessageSquare className="w-4 h-4 mt-0.5 flex-shrink-0 opacity-70" />
@@ -210,12 +232,9 @@ const ChatTab: React.FC<ChatTabProps> = ({ document, onDocumentUpdate }) => {
                   <div className="text-sm font-medium truncate">{chat.title || "Chat Session"}</div>
                   <div className="text-[10px] opacity-60 mt-0.5">{new Date(chat.createdAt).toLocaleDateString()}</div>
                 </div>
-                <button 
-                  onClick={(e) => handleDeleteClick(idx, e)} 
-                  className="opacity-0 group-hover:opacity-100 hover:text-red-400 p-1 flex-shrink-0"
-                >
-                  {deletingIndex === idx ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
-                </button>
+                {deletingIndex === idx && (
+                  <RefreshCw className="w-3.5 h-3.5 animate-spin text-gray-500 p-1 flex-shrink-0" />
+                )}
               </div>
             ))
           )}
@@ -337,6 +356,26 @@ const ChatTab: React.FC<ChatTabProps> = ({ document, onDocumentUpdate }) => {
         onConfirm={executeDelete}
         onCancel={() => setConfirmModal({ isOpen: false, index: null })}
       />
+
+      {/* Custom Context Menu */}
+      {contextMenu.isOpen && contextMenu.index !== null && (
+        <div 
+          className="fixed z-[100] bg-[#1e1e24] border border-white/[0.08] rounded-xl shadow-2xl py-1.5 w-48 animate-fade-in"
+          style={{ top: contextMenu.y, left: contextMenu.x }}
+        >
+          <button
+            onClick={(e) => {
+               e.stopPropagation();
+               setContextMenu(prev => ({ ...prev, isOpen: false }));
+               handleDeleteClick(contextMenu.index!, e);
+            }}
+            className="w-full text-left px-4 py-2.5 text-sm text-red-400 hover:bg-white/[0.04] flex items-center gap-3 transition-colors"
+          >
+            <Trash2 className="w-4 h-4" />
+            Delete Chat
+          </button>
+        </div>
+      )}
     </div>
   );
 };
