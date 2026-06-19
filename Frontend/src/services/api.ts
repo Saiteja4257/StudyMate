@@ -55,6 +55,8 @@ export const aiAPI = {
     API.post(`/ai/chat/${documentId}/save`, { chatIndex, messages, title }),
   deleteChat: (documentId: string, index: number) =>
     API.delete(`/ai/chat/${documentId}/${index}`),
+  visualExplain: (id: string, question: string) =>
+    API.post(`/ai/visual-explain/${id}`, { question }),
 };
 
 export const analyticsAPI = {
@@ -70,6 +72,20 @@ export const studyPlanAPI = {
   getTaskContent: (planId: string, taskId: string) => 
     API.get(`/study-plan/${planId}/task/${taskId}/content`),
   deletePlan: (id: string) => API.delete(`/study-plan/${id}`),
+};
+
+export const studySpaceAPI = {
+  generate: (data: { topic: string; level: string; goal: string }) => 
+    API.post('/study-space/generate', data),
+  getAll: () => API.get('/study-space'),
+  getById: (id: string) => API.get(`/study-space/${id}`),
+  getModuleContent: (id: string, moduleId: string) => 
+    API.get(`/study-space/${id}/module/${moduleId}/content`),
+  updateModuleProgress: (id: string, moduleId: string, completed: boolean) => 
+    API.patch(`/study-space/${id}/module/${moduleId}/progress`, { completed }),
+  delete: (id: string) => API.delete(`/study-space/${id}`),
+  askTutor: (id: string, moduleId: string, question: string, history: { role: string; content: string }[] = []) => 
+    API.post(`/study-space/${id}/module/${moduleId}/ask`, { question, history }),
 };
 
 export default API;

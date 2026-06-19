@@ -8,6 +8,7 @@ import documentRoutes from "./routes/documentRoutes";
 import  aiRoutes  from "./routes/aiRoutes";
 import analyticsRoutes from "./routes/analyticsRoutes";
 import studyPlanRoutes from "./routes/studyPlanRoutes";
+import studySpaceRoutes from "./routes/studySpaceRoutes";
 dotenv.config();
 
 const app = express();
@@ -26,6 +27,7 @@ app.use("/api/documents", documentRoutes);
 app.use("/api/ai",aiRoutes);
 app.use("/api/analytics", analyticsRoutes);
 app.use("/api/study-plan", studyPlanRoutes);
+app.use("/api/study-space", studySpaceRoutes);
 
 app.get("/", (_, res) => {
   res.send("StudyMate API Running");

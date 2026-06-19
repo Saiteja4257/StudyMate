@@ -19,14 +19,15 @@ import FlashcardsTab from './FlashcardsTab';
 import ChatTab from './ChatTab';
 import InsightsTab from './InsightsTab';
 import MindMapTab from './MindMapTab';
-import { TrendingUp } from 'lucide-react';
+import VisualLearnTab from './VisualLearnTab';
+import { TrendingUp, MonitorPlay } from 'lucide-react';
 
 interface WorkspaceMainProps {
   document: any | null;
   onDocumentUpdate: () => void;
 }
 
-type TabKey = 'overview' | 'summary' | 'quiz' | 'flashcards' | 'chat' | 'mindmap' | 'insights';
+type TabKey = 'overview' | 'summary' | 'quiz' | 'flashcards' | 'chat' | 'visual' | 'mindmap' | 'insights';
 
 const tabs: { key: TabKey; label: string; icon: React.ElementType }[] = [
   { key: 'overview', label: 'Overview', icon: LayoutGrid },
@@ -34,6 +35,7 @@ const tabs: { key: TabKey; label: string; icon: React.ElementType }[] = [
   { key: 'quiz', label: 'Quiz', icon: Brain },
   { key: 'flashcards', label: 'Flashcards', icon: Layers },
   { key: 'chat', label: 'Chat', icon: MessageSquare },
+  { key: 'visual', label: 'Visual', icon: MonitorPlay },
   { key: 'mindmap', label: 'Mind Map', icon: Network },
   { key: 'insights', label: 'Insights', icon: TrendingUp },
 ];
@@ -81,6 +83,8 @@ const WorkspaceMain: React.FC<WorkspaceMainProps> = ({ document, onDocumentUpdat
         return <FlashcardsTab document={document} onDocumentUpdate={onDocumentUpdate} />;
       case 'chat':
         return <ChatTab document={document} onDocumentUpdate={onDocumentUpdate} />;
+      case 'visual':
+        return <VisualLearnTab document={document} />;
       case 'mindmap':
         return <MindMapTab document={document} onDocumentUpdate={onDocumentUpdate} />;
       case 'insights':

@@ -1,7 +1,7 @@
 import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
 // import { MemoryVectorStore } from "@langchain/classic/vectorstores/memory";
 import { embeddings } from "../config/embeddings";
-import { askWithContext } from "./aiService";
+import { askWithContext, generateVisualExplanation } from "./aiService";
 import { DocumentChunk } from "../models/DocumentChunk";
 import mongoose from "mongoose";
 // Store vector stores in memory using documentId
@@ -122,6 +122,22 @@ export const askDocument = async (
 
   return {
     answer,
+    sources: docs,
+  };
+};
+
+export const askVisualDocument = async (
+  documentId: string,
+  question: string
+) => {
+  const docs = await retrieveRelevantChunks(documentId, question);
+
+  const context = docs.map((doc) => doc.text).join("\n\n");
+
+  const responseText = await generateVisualExplanation(context, question);
+  
+  return {
+    visualData: responseText,
     sources: docs,
   };
 };

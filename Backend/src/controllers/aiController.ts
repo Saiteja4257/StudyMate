@@ -9,7 +9,7 @@ import {
   generateChatTitle,
 } from "../services/aiService";
 
-import { askDocument } from "../services/ragService"; 
+import { askDocument, askVisualDocument } from "../services/ragService"; 
 
 // Helper to clean LLM JSON output
 const cleanJsonResponse = (
@@ -599,5 +599,39 @@ export const deleteChatSession = async (req: any, res: any) => {
     res.status(200).json({ success: true, chats });
   } catch (error: any) {
     res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const visualExplainDocument = async (req: Request, res: Response) => {
+  try {
+    const { question } = req.body;
+    const documentId = req.params.id as string;
+    
+    if (!question) {
+      return res.status(400).json({ message: "Question is required" });
+    }
+
+    const result = await askVisualDocument(documentId, question);
+    
+    const cleaned = cleanJsonResponse(result.visualData);
+    let parsedData;
+    
+    try {
+      parsedData = JSON.parse(cleaned);
+    } catch (e) {
+      console.error("Failed to parse visual data:", cleaned);
+      return res.status(500).json({ message: "AI returned invalid visual data" });
+    }
+
+    res.json({
+      success: true,
+      data: parsedData,
+      sources: result.sources,
+    });
+  } catch (error: any) {
+    console.error("Visual explain error:", error);
+    res.status(500).json({
+      message: error.message,
+    });
   }
 };

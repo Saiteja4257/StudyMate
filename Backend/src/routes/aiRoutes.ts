@@ -9,7 +9,8 @@ import {
   generateMindMapController,
   saveChatSession,
   deleteChatSession,
-  chatWithDocument
+  chatWithDocument,
+  visualExplainDocument
 } from "../controllers/aiController"; 
 
 import { retrieveRelevantChunks } from "../services/ragService";
@@ -48,5 +49,7 @@ router.post("/chat/:id/save", saveChatSession);
 router.delete("/chat/:id/:index", deleteChatSession);
 
 router.post("/mindmap/:id", generateMindMapController);
+
+router.post("/visual-explain/:id", visualExplainDocument);
 
 export default router;

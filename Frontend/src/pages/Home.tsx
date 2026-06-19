@@ -23,6 +23,7 @@ import {
   CheckCircle2,
   Shield,
 } from 'lucide-react';
+import CreateStudySpaceModal from '../components/CreateStudySpaceModal';
 
 interface DocItem {
   _id: string;
@@ -41,6 +42,7 @@ const Home = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const spacesRef = useRef<HTMLDivElement>(null);
 
@@ -178,6 +180,12 @@ const Home = () => {
               My Spaces
             </button>
             <button
+              onClick={() => navigate('/study-spaces')}
+              className="text-lg font-medium text-gray-400 hover:text-white transition-colors"
+            >
+              AI Courses
+            </button>
+            <button
               onClick={() => navigate('/study-planner')}
               className="text-lg font-medium text-gray-400 hover:text-white transition-colors"
             >
@@ -251,7 +259,7 @@ const Home = () => {
           {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-12 animate-slide-up" style={{ animationDelay: '0.2s' }}>
             <button
-              onClick={() => fileInputRef.current?.click()}
+              onClick={() => setShowCreateModal(true)}
               disabled={isUploading}
               className="btn-primary flex items-center gap-2 px-8 py-4 text-lg rounded-2xl"
             >
@@ -371,7 +379,7 @@ const Home = () => {
           <div className="flex items-center justify-between mb-8">
             <h2 className="text-3xl font-bold text-white">Your Study Spaces</h2>
             <button
-              onClick={() => fileInputRef.current?.click()}
+              onClick={() => setShowCreateModal(true)}
               disabled={isUploading}
               className="flex items-center gap-2 text-sm text-primary hover:text-primary-light transition-colors font-medium"
             >
@@ -388,7 +396,7 @@ const Home = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
               {/* Create New Space Card */}
               <button
-                onClick={() => fileInputRef.current?.click()}
+                onClick={() => setShowCreateModal(true)}
                 disabled={isUploading}
                 className="group relative bg-white/[0.02] border-2 border-dashed border-white/[0.06] hover:border-primary/30 rounded-2xl p-6 flex flex-col items-center justify-center min-h-[220px] transition-all duration-300 hover:bg-white/[0.03]"
               >
@@ -500,6 +508,13 @@ const Home = () => {
       {menuOpenId && (
         <div className="fixed inset-0 z-10" onClick={() => setMenuOpenId(null)} />
       )}
+
+      <CreateStudySpaceModal 
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onSelectPDF={() => fileInputRef.current?.click()}
+        onSelectAI={() => navigate('/study-spaces/create')}
+      />
     </div>
   );
 };

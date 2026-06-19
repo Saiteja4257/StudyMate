@@ -15,6 +15,9 @@ import AnalyticsDashboard from "./pages/AnalyticsDashboard";
 import Profile from "./pages/Profile";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { ProtectedRoute } from "./components/ProtectedRoute";
+import StudySpacesList from "./pages/StudySpacesList";
+import StudySpaceCreate from "./pages/StudySpaceCreate";
+import StudySpaceDashboard from "./pages/StudySpaceDashboard";
 
 // Simple wrapper to redirect authenticated users away from public routes like login/register
 const PublicRoute = ({ children }: { children: React.ReactNode }) => {
@@ -68,6 +71,33 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <StudyPlanner />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/study-spaces"
+        element={
+          <ProtectedRoute>
+            <StudySpacesList />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/study-spaces/create"
+        element={
+          <ProtectedRoute>
+            <StudySpaceCreate />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/study-spaces/:id"
+        element={
+          <ProtectedRoute>
+            <StudySpaceDashboard />
           </ProtectedRoute>
         }
       />

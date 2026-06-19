@@ -319,3 +319,62 @@ export const generateChatTitle = async (firstMessage: string) => {
 
   return completion.choices[0].message.content?.trim() || "New Chat";
 };
+
+export const generateVisualExplanation = async (context: string, question: string) => {
+  const prompt = `You are an expert educator. Explain the answer to the user's question based on the provided document context.
+Your goal is to provide BOTH a clear text explanation AND a structured diagram representation of the concept.
+
+Question: ${question}
+
+Context:
+${context}
+
+You must return ONLY a valid JSON object matching this schema exactly:
+{
+  "title": "A short, descriptive title",
+  "explanation": "A clear, concise text explanation of the answer, using markdown for formatting.",
+  "diagramType": "Type of diagram (e.g., 'Binary Tree', 'Flowchart', 'System Architecture', 'Process Flow', 'List', 'Graph')",
+  "nodes": [
+    {
+      "id": "node-1",
+      "data": { "label": "Text inside the node" },
+      "position": { "x": 0, "y": 0 },
+      "type": "default"
+    }
+  ],
+  "edges": [
+    {
+      "id": "e1-2",
+      "source": "node-1",
+      "target": "node-2",
+      "label": "Optional edge text",
+      "type": "smoothstep"
+    }
+  ]
+}
+
+Rules for Diagram Generation:
+1. Ensure 'id' for nodes are unique strings.
+2. Ensure 'source' and 'target' in edges match the node 'id's.
+3. Automatically layout the nodes by providing sensible 'x' and 'y' coordinates in the 'position' object. For example, for a tree, root at (250, 0), children at (100, 100) and (400, 100). Keep them spaced out by at least 150px horizontally and 100px vertically to avoid overlap.
+4. Keep node labels short (2-5 words).
+5. Output ONLY valid JSON, without any markdown formatting wrappers like \`\`\`json.`;
+
+  const completion = await groq.chat.completions.create({
+    model: "llama-3.3-70b-versatile",
+    messages: [
+      {
+        role: "system",
+        content: "You are an expert at explaining technical and educational concepts using both text and diagrams. Output only valid JSON.",
+      },
+      {
+        role: "user",
+        content: prompt,
+      },
+    ],
+    temperature: 0.2,
+    max_tokens: 4096,
+  });
+
+  return completion.choices[0].message.content;
+};
