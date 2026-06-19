@@ -4,8 +4,6 @@
     "module": "commonjs",
     "rootDir": "./src",
     "outDir": "./dist",
-
-
     "strict": true,
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,

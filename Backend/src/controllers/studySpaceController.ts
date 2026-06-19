@@ -85,7 +85,7 @@ export const getStudySpaceById = async (req: Request, res: Response) => {
 
 export const getModuleContent = async (req: Request, res: Response) => {
   try {
-    const { id, moduleId } = req.params;
+    const { id } = req.params;
     const userId = (req as any).user?.id;
     
     const space = await StudySpace.findOne({ _id: id, userId });
@@ -93,6 +93,7 @@ export const getModuleContent = async (req: Request, res: Response) => {
       return res.status(404).json({ message: "Study space not found" });
     }
     
+    const moduleId = req.params.moduleId as string;
     const module = space.modules.id(moduleId);
     if (!module) {
       return res.status(404).json({ message: "Module not found" });
@@ -140,7 +141,7 @@ export const getModuleContent = async (req: Request, res: Response) => {
 
 export const updateModuleProgress = async (req: Request, res: Response) => {
   try {
-    const { id, moduleId } = req.params;
+    const { id } = req.params;
     const { completed } = req.body;
     const userId = (req as any).user?.id;
     
@@ -149,6 +150,7 @@ export const updateModuleProgress = async (req: Request, res: Response) => {
       return res.status(404).json({ message: "Study space not found" });
     }
     
+    const moduleId = req.params.moduleId as string;
     const module = space.modules.id(moduleId);
     if (!module) {
       return res.status(404).json({ message: "Module not found" });
@@ -188,7 +190,7 @@ export const deleteStudySpace = async (req: Request, res: Response) => {
 
 export const askTutor = async (req: Request, res: Response) => {
   try {
-    const { id, moduleId } = req.params;
+    const { id } = req.params;
     const { question, history } = req.body;
     const userId = (req as any).user?.id;
     
@@ -197,6 +199,7 @@ export const askTutor = async (req: Request, res: Response) => {
       return res.status(404).json({ message: "Study space not found" });
     }
     
+    const moduleId = req.params.moduleId as string; 
     const module = space.modules.id(moduleId);
     if (!module || !module.contentGenerated) {
       return res.status(400).json({ message: "Module content not ready" });
