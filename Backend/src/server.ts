@@ -5,7 +5,7 @@ import path from "path";
 import authRoutes from "./routes/authRoutes";
 import { connectDB } from "./config/db";
 import documentRoutes from "./routes/documentRoutes";
-import  aiRoutes  from "./routes/aiRoutes";
+import aiRoutes from "./routes/aiRoutes";
 import analyticsRoutes from "./routes/analyticsRoutes";
 import studyPlanRoutes from "./routes/studyPlanRoutes";
 import studySpaceRoutes from "./routes/studySpaceRoutes";
@@ -15,16 +15,21 @@ const app = express();
 
 connectDB();
 
-app.use(cors({
-  origin: "http://localhost:5173",
-  credentials: true,
-}));
+app.use(
+  cors({
+    origin: [
+      "http://localhost:5173",
+      "https://studymate-8.vercel.app",
+    ],
+    credentials: true,
+  })
+);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 app.use("/api/auth", authRoutes);
 app.use("/api/documents", documentRoutes);
-app.use("/api/ai",aiRoutes);
+app.use("/api/ai", aiRoutes);
 app.use("/api/analytics", analyticsRoutes);
 app.use("/api/study-plan", studyPlanRoutes);
 app.use("/api/study-space", studySpaceRoutes);
