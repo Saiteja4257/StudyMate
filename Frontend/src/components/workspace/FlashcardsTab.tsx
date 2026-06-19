@@ -205,7 +205,7 @@ const FlashcardsTab: React.FC<FlashcardsTabProps> = ({ document, onDocumentUpdat
 
           {/* Dot indicators */}
           <div className="flex gap-1.5 max-w-[200px] overflow-x-auto no-scrollbar">
-            {flashcards.map((_:Flashcard, idx) => (
+            {flashcards.map((_:Flashcard, idx:number) => (
               <button
                 key={idx}
                 onClick={() => {
