@@ -314,15 +314,7 @@ const QuizTab: React.FC<QuizTabProps> = ({ document, onDocumentUpdate }) => {
 
   if (!currentQ) {
     return (
-      <div className="animate-fade-in text-center p-8 text-gray-400">
-        No questions available for this quiz. Please generate a new one.
-        <button
-          onClick={() => setSelectedQuizIndex(null)}
-          className="mt-4 block mx-auto text-secondary hover:text-white transition-colors"
-        >
-          Back to Quiz Hub
-        </button>
-      </div>
+    null
     );
   }
 
