@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { studySpaceAPI } from '../services/api';
+import CreateStudySpaceModal from '../components/CreateStudySpaceModal';
+import StudySpaceCreate from './StudySpaceCreate';
 import {
   Plus,
   BookOpen,
@@ -13,9 +15,9 @@ import {
   Settings,
   LogOut,
   Layers,
-  GraduationCap
+  GraduationCap,
+  ArrowLeft
 } from 'lucide-react';
-import CreateStudySpaceModal from '../components/CreateStudySpaceModal';
 
 interface StudySpaceItem {
   _id: string;
@@ -70,31 +72,21 @@ const StudySpacesList = () => {
       {/* ─── Top Navigation ─── */}
       <nav className="fixed top-0 w-full z-50 bg-[#0a0a0a]/70 backdrop-blur-2xl border-b border-white/[0.04]">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2.5 flex-1 cursor-pointer" onClick={() => navigate('/home')}>
-            <Sparkles className="w-5 h-5 text-primary" />
-            <span className="text-lg font-bold text-white tracking-tight">StudyMate</span>
-          </div>
-
-          <div className="hidden sm:flex items-center justify-center gap-8 flex-1">
+          <div>
             <button
               onClick={() => navigate('/home')}
-              className="text-lg font-medium text-gray-400 hover:text-white transition-colors"
+              className="flex items-center gap-2 px-3 py-2 rounded-xl text-gray-400 hover:text-white hover:bg-white/[0.06] transition-all"
             >
-              Documents
-            </button>
-            <button
-              onClick={() => navigate('/study-spaces')}
-              className="text-lg font-medium text-white transition-colors"
-            >
-              AI Courses
-            </button>
-            <button
-              onClick={() => navigate('/study-planner')}
-              className="text-lg font-medium text-gray-400 hover:text-white transition-colors"
-            >
-              Planner
+              <ArrowLeft className="w-4 h-4" />
+              <span className="font-medium text-sm">Back</span>
             </button>
           </div>
+          {/* <div className="flex items-center gap-2.5 flex-1 cursor-pointer" onClick={() => navigate('/home')}>
+            <Sparkles className="w-5 h-5 text-primary" />
+            <span className="text-lg font-bold text-white tracking-tight">StudyMate</span>
+          </div> */}
+
+          
 
           <div className="flex items-center justify-end gap-5 flex-1">
             <div className="relative group">
@@ -127,7 +119,7 @@ const StudySpacesList = () => {
             <p className="text-gray-400">Your personalized, AI-generated courses.</p>
           </div>
           <button
-            onClick={() => setShowCreateModal(true)}
+            onClick={() => navigate("/study-spaces/create") }
             className="btn-primary flex items-center gap-2 px-6 py-3 rounded-xl font-medium"
           >
             <Plus className="w-5 h-5" /> Create Study Space
@@ -163,7 +155,7 @@ const StudySpacesList = () => {
                   key={space._id}
                   onClick={() => navigate(`/study-spaces/${space._id}`)}
                   className="group relative cursor-pointer rounded-3xl overflow-hidden flex flex-col transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:shadow-black/40 border border-white/[0.05] hover:border-white/[0.15]"
-                  style={{ background: `linear-gradient(160deg, \${bgColor}, #111)` }}
+                  style={{ background: `linear-gradient(160deg, ${bgColor}, #111)` }}
                 >
                   <div className="flex-1 p-6 flex flex-col relative z-10">
                     <div className="flex items-start justify-between mb-6">
@@ -212,7 +204,7 @@ const StudySpacesList = () => {
                         <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
                           <div 
                             className="h-full bg-indigo-500 rounded-full transition-all duration-500"
-                            style={{ width: `\${space.progress}%` }}
+                            style={{ width: `${space.progress}%` }}
                           />
                         </div>
                       </div>

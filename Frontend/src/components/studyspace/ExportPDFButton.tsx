@@ -51,7 +51,7 @@ const ExportPDFButton: React.FC<ExportPDFButtonProps> = ({ space }) => {
         }
         doc.setFontSize(14);
         doc.setTextColor(60, 60, 150);
-        doc.text(`Module \${index + 1}: \${mod.title}`, margin, yPosition);
+        doc.text(`Module ${index + 1}: ${mod.title}`, margin, yPosition);
         yPosition += 8;
         
         doc.setFontSize(11);
@@ -71,7 +71,7 @@ const ExportPDFButton: React.FC<ExportPDFButtonProps> = ({ space }) => {
         
         doc.setFontSize(22);
         doc.setTextColor(40, 40, 40);
-        doc.text(`Module \${i + 1}: \${mod.title}`, margin, yPosition);
+        doc.text(`Module ${i + 1}: ${mod.title}`, margin, yPosition);
         yPosition += 15;
 
         // Key Concepts
@@ -85,7 +85,7 @@ const ExportPDFButton: React.FC<ExportPDFButtonProps> = ({ space }) => {
           doc.setTextColor(80, 80, 80);
           mod.keyConcepts.forEach((concept: string) => {
             if (yPosition > 280) { doc.addPage(); yPosition = margin; }
-            doc.text(`• \${concept}`, margin + 5, yPosition);
+            doc.text(`• ${concept}`, margin + 5, yPosition);
             yPosition += 7;
           });
           yPosition += 5;
@@ -121,7 +121,7 @@ const ExportPDFButton: React.FC<ExportPDFButtonProps> = ({ space }) => {
         }
       }
 
-      doc.save(`\${space.title.replace(/\\s+/g, '_')}_StudyGuide.pdf`);
+      doc.save(`${space.title.replace(/\s+/g, '_')}_StudyGuide.pdf`);
     } catch (error) {
       console.error('Failed to generate PDF', error);
       alert('Failed to generate PDF. Please try again.');

@@ -75,7 +75,7 @@ export const studyPlanAPI = {
 };
 
 export const studySpaceAPI = {
-  generate: (data: { topic: string; level: string; goal: string }) => 
+  generate: (data: { topic: string; goal: string }) => 
     API.post('/study-space/generate', data),
   getAll: () => API.get('/study-space'),
   getById: (id: string) => API.get(`/study-space/${id}`),

@@ -61,7 +61,7 @@ const StudySpaceTutor: React.FC<StudySpaceTutorProps> = ({ spaceId, moduleId }) 
   };
 
   return (
-    <div className="h-[600px] w-full flex flex-col bg-[#151515] border border-white/[0.1] rounded-3xl overflow-hidden animate-fade-in">
+    <div className="h-auto w-full flex flex-col bg-[#151515] border border-white/[0.1] rounded-3xl overflow-hidden animate-fade-in">
       <div className="h-16 border-b border-white/[0.06] flex items-center justify-between px-6 bg-[#1a1a1a]">
         <div className="flex items-center gap-2">
           <Sparkles className="w-5 h-5 text-indigo-400" />
@@ -71,13 +71,13 @@ const StudySpaceTutor: React.FC<StudySpaceTutorProps> = ({ spaceId, moduleId }) 
 
       <div className="flex-1 overflow-y-auto p-5 space-y-6 custom-scrollbar">
         {messages.map((msg, idx) => (
-          <div key={idx} className={`flex gap-3 \${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 \${
+          <div key={idx} className={`flex gap-3 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
               msg.role === 'user' ? 'bg-indigo-500' : 'bg-white/[0.08]'
             }`}>
               {msg.role === 'user' ? <User className="w-4 h-4 text-white" /> : <Bot className="w-4 h-4 text-indigo-400" />}
             </div>
-            <div className={`max-w-[80%] rounded-2xl p-4 text-sm \${
+            <div className={`max-w-[80%] rounded-2xl p-4 text-sm ${
               msg.role === 'user' 
                 ? 'bg-indigo-600 text-white rounded-tr-none' 
                 : 'bg-white/[0.03] text-gray-300 rounded-tl-none border border-white/[0.05]'

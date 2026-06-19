@@ -3,20 +3,33 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { studySpaceAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import {
+  FileText,
+  LayoutGrid,
+  Brain,
+  Layers,
+  MessageSquare,
   BookOpen,
+  ChevronLeft,
+  ChevronRight,
+  MonitorPlay,
   CheckCircle2,
   Circle,
   Loader2,
-  ChevronLeft,
-  ChevronRight,
-  Menu,
-  X,
-  MessageSquare,
-  Sparkles
 } from 'lucide-react';
+
+type TabKey = 'modules' | 'notes' | 'quiz' | 'flashcards' | 'chat' | 'visual';
+
+const tabs: { key: TabKey; label: string; icon: React.ElementType }[] = [
+  { key: 'modules', label: 'Modules', icon: LayoutGrid },
+  { key: 'notes', label: 'Study Notes', icon: BookOpen },
+  { key: 'flashcards', label: 'Flashcards', icon: Layers },
+  { key: 'quiz', label: 'Practice Quiz', icon: Brain },
+  { key: 'visual', label: 'Visual', icon: MonitorPlay },
+  { key: 'chat', label: 'AI Tutor', icon: MessageSquare },
+];
 import ModuleDetail from '../components/studyspace/ModuleDetail';
-import StudySpaceTutor from '../components/studyspace/StudySpaceTutor';
-import ExportPDFButton from '../components/studyspace/ExportPDFButton';
+import ExportPDFButton from '../components/studyspace/ExportPDFButton.tsx';
+import { ArrowLeft, Sparkles } from 'lucide-react';
 
 const StudySpaceDashboard = () => {
   const { id } = useParams<{ id: string }>();
@@ -24,7 +37,7 @@ const StudySpaceDashboard = () => {
   const [space, setSpace] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [activeModuleId, setActiveModuleId] = useState<string | null>(null);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<TabKey>('modules');
 
   useEffect(() => {
     fetchSpace();
@@ -80,124 +93,153 @@ const StudySpaceDashboard = () => {
   if (!space) return null;
 
   return (
-    <div className="flex h-screen bg-[#0a0a0a] overflow-hidden text-white">
-      {/* Mobile Sidebar Overlay */}
-      {sidebarOpen && (
-        <div 
-          className="fixed inset-0 bg-black/60 z-40 md:hidden"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
-
-      {/* Sidebar / Roadmap */}
-      <aside 
-        className={`fixed inset-y-0 left-0 z-50 w-72 bg-[#111] border-r border-white/[0.06] flex flex-col transition-transform duration-300 md:relative md:translate-x-0 \${
-          sidebarOpen ? 'translate-x-0' : '-translate-x-full'
-        }`}
-      >
-        <div className="p-5 border-b border-white/[0.06] flex items-center justify-between">
-          <button 
-            onClick={() => navigate('/study-spaces')}
-            className="flex items-center gap-2 text-sm text-gray-400 hover:text-white transition-colors"
-          >
-            <ChevronLeft className="w-4 h-4" /> Back
-          </button>
-          <button onClick={() => setSidebarOpen(false)} className="md:hidden">
-            <X className="w-5 h-5 text-gray-400" />
-          </button>
-        </div>
-
-        <div className="p-5 border-b border-white/[0.06]">
-          <div className="flex items-center gap-2 mb-2">
-            <span className="text-xs font-semibold px-2.5 py-1 rounded-md bg-indigo-500/20 text-indigo-300">
-              {space.topic}
-            </span>
-          </div>
-          <h2 className="text-lg font-bold leading-tight mb-3">{space.title}</h2>
-          
-          {/* Progress Bar */}
-          <div className="space-y-1.5">
-            <div className="flex justify-between text-xs text-gray-400">
-              <span>Progress</span>
-              <span>{space.progress}%</span>
-            </div>
-            <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
-              <div 
-                className="h-full bg-indigo-500 rounded-full transition-all duration-500"
-                style={{ width: `\${space.progress}%` }}
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Modules List */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-2 custom-scrollbar">
-          {space.modules.map((m: any, idx: number) => (
+    <div className="flex-1 flex flex-col h-screen overflow-hidden bg-[#0a0a0a]">
+      {/* Header */}
+      <div className="px-8 pt-6 pb-0 shrink-0">
+        <div className="flex items-center gap-3 mb-5">
+          <div className="flex items-center gap-3 mr-4">
             <button
-              key={m._id}
-              onClick={() => {
-                setActiveModuleId(m._id);
-                setSidebarOpen(false);
-              }}
-              className={`w-full text-left p-3 rounded-xl transition-all flex gap-3 \${
-                activeModuleId === m._id 
-                  ? 'bg-indigo-500/10 border border-indigo-500/30' 
-                  : 'hover:bg-white/[0.03] border border-transparent'
-              }`}
+              onClick={() => navigate('/study-spaces')}
+              className="flex items-center gap-2 px-3 py-2 rounded-xl text-gray-400 hover:text-white hover:bg-white/[0.06] transition-all"
             >
-              <div className="mt-0.5">
-                {m.completed ? (
-                  <CheckCircle2 className="w-5 h-5 text-emerald-500" />
-                ) : (
-                  <Circle className={`w-5 h-5 \${activeModuleId === m._id ? 'text-indigo-400' : 'text-gray-600'}`} />
-                )}
-              </div>
-              <div>
-                <p className="text-xs text-gray-500 mb-0.5 font-medium">Module {idx + 1}</p>
-                <p className={`text-sm font-medium line-clamp-2 \${activeModuleId === m._id ? 'text-indigo-300' : 'text-gray-300'}`}>
-                  {m.title}
-                </p>
-              </div>
+              <ArrowLeft className="w-4 h-4" />
+              <span className="font-medium text-sm">Back</span>
             </button>
-          ))}
-        </div>
-        
-        {/* Export Button */}
-        <div className="p-4 border-t border-white/[0.06]">
-          <ExportPDFButton space={space} />
-        </div>
-      </aside>
 
-      {/* Main Content Area */}
-      <main className="flex-1 flex flex-col relative overflow-hidden bg-[#0a0a0a]">
-        {/* Top bar for mobile / Header */}
-        <header className="h-16 border-b border-white/[0.06] flex items-center justify-between px-4 sm:px-6 shrink-0 bg-[#0a0a0a]/80 backdrop-blur-md z-20">
-          <div className="flex items-center gap-3">
-            <button onClick={() => setSidebarOpen(true)} className="md:hidden p-2 -ml-2 text-gray-400 hover:text-white">
-              <Menu className="w-5 h-5" />
+            <button
+              onClick={() => navigate('/study-spaces')}
+              className="flex items-center gap-2 px-3 py-2 rounded-xl text-indigo-400 hover:bg-indigo-400/10 transition-all font-medium text-sm border border-transparent hover:border-indigo-400/20"
+            >
+              <span className="text-lg leading-none mb-0.5">+</span>
+              New space
             </button>
-            <h1 className="font-semibold text-white truncate max-w-[200px] sm:max-w-md hidden sm:block">
-              {activeModule?.title}
-            </h1>
+
+            <div className="w-px h-6 bg-white/[0.1] mx-2"></div>
+          </div>
+
+          <div className="w-9 h-9 rounded-lg bg-indigo-500/15 flex items-center justify-center flex-shrink-0">
+            <Sparkles className="w-4 h-4 text-indigo-400" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2 mb-0.5">
+              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-indigo-500/20 text-indigo-300 uppercase tracking-wider">
+                {space.topic}
+              </span>
+              <h1 className="text-xl font-bold text-white line-clamp-1">{space.title}</h1>
+            </div>
+            <div className="flex items-center gap-4 text-xs text-gray-500">
+              <span>Created {new Date(space.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</span>
+              <div className="flex items-center gap-2 w-32">
+                <span>{space.progress}%</span>
+                <div className="flex-1 h-1 bg-white/10 rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-indigo-500 rounded-full transition-all duration-500"
+                    style={{ width: `${space.progress}%` }}
+                  />
+                </div>
+              </div>
+            </div>
           </div>
           
-        </header>
+          <div className="flex-shrink-0">
+            <ExportPDFButton space={space} />
+          </div>
+        </div>
 
-        {/* Module Content Area */}
-        <div className="flex-1 overflow-y-auto custom-scrollbar relative">
-          <div className="max-w-4xl mx-auto py-8 px-4 sm:px-8 pb-32">
+        {/* Tabs */}
+        <div className="flex gap-1 border-b border-white/[0.06] -mx-8 px-8">
+          {tabs.map((tab) => {
+            const isActive = activeTab === tab.key;
+            return (
+              <button
+                key={tab.key}
+                onClick={() => setActiveTab(tab.key)}
+                className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium transition-all duration-200 border-b-2 -mb-[1px] ${
+                  isActive
+                    ? 'text-white border-indigo-500'
+                    : 'text-gray-500 border-transparent hover:text-gray-300 hover:border-white/[0.1]'
+                }`}
+              >
+                <tab.icon className="w-4 h-4" />
+                {tab.label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Tab Content */}
+      <div className="flex-1 overflow-y-auto px-8 py-6 custom-scrollbar">
+        {activeTab === 'modules' ? (
+          <div className="max-w-5xl mx-auto animate-fade-in">
+            <div className="mb-6 flex justify-between items-center">
+              <div>
+                <h2 className="text-2xl font-bold text-white mb-2">Course Modules</h2>
+                <p className="text-gray-400">Select a module to start learning and view its study materials.</p>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {space.modules.map((m: any, idx: number) => (
+                <div
+                  key={m._id}
+                  onClick={() => {
+                    setActiveModuleId(m._id);
+                    setActiveTab('notes');
+                  }}
+                  className={`group relative p-5 rounded-2xl cursor-pointer transition-all duration-300 border ${
+                    activeModuleId === m._id 
+                      ? 'bg-indigo-500/10 border-indigo-500/30 shadow-[0_0_20px_rgba(99,102,241,0.1)]' 
+                      : 'bg-[#151515] border-white/[0.05] hover:border-white/[0.1] hover:-translate-y-0.5 hover:shadow-xl hover:bg-white/[0.02]'
+                  }`}
+                >
+                  <div className="flex items-start justify-between mb-4">
+                    <span className="text-xs font-bold px-2 py-1 bg-white/[0.05] text-gray-400 rounded-md">
+                      Module {idx + 1}
+                    </span>
+                    {m.completed ? (
+                      <span className="flex items-center gap-1.5 text-xs font-medium text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded-md">
+                        <CheckCircle2 className="w-3.5 h-3.5" /> Completed
+                      </span>
+                    ) : (
+                      <span className="flex items-center gap-1.5 text-xs font-medium text-gray-500 bg-white/[0.05] px-2 py-1 rounded-md group-hover:text-indigo-300 transition-colors">
+                        <Circle className="w-3.5 h-3.5" /> Pending
+                      </span>
+                    )}
+                  </div>
+                  <h3 className={`text-lg font-bold mb-2 line-clamp-2 ${activeModuleId === m._id ? 'text-indigo-100' : 'text-white'}`}>
+                    {m.title}
+                  </h3>
+                  {m.summary && (
+                    <p className="text-sm text-gray-500 line-clamp-2 leading-relaxed">
+                      {m.summary}
+                    </p>
+                  )}
+                  
+                  {activeModuleId === m._id && (
+                    <div className="absolute inset-0 border-2 border-indigo-500/50 rounded-2xl pointer-events-none" />
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <div className="max-w-4xl mx-auto pb-20">
             {activeModule && (
               <ModuleDetail 
                 spaceId={id!} 
                 module={activeModule} 
                 onProgressUpdate={handleModuleProgressUpdate}
+                activeTab={activeTab as any}
               />
             )}
           </div>
-        </div>
-
-        {/* Footer Navigation */}
-        <div className="absolute bottom-0 w-full bg-[#111] border-t border-white/[0.06] p-4 flex items-center justify-between z-10">
+        )}
+      </div>
+      
+      {/* Footer Navigation (only show if not on modules list) */}
+      {activeTab !== 'modules' && (
+        <div className="absolute bottom-0 w-full bg-[#0a0a0a] border-t border-white/[0.06] p-4 flex items-center justify-between z-10">
           <button
             onClick={handlePrev}
             disabled={activeModuleIndex <= 0}
@@ -205,6 +247,10 @@ const StudySpaceDashboard = () => {
           >
             <ChevronLeft className="w-4 h-4" /> Previous Module
           </button>
+          
+          <span className="text-sm text-gray-500 font-medium">
+            Module {activeModuleIndex + 1} of {space.modules.length}
+          </span>
           
           <button
             onClick={handleNext}
@@ -214,7 +260,7 @@ const StudySpaceDashboard = () => {
             Next Module <ChevronRight className="w-4 h-4" />
           </button>
         </div>
-      </main>
+      )}
     </div>
   );
 };

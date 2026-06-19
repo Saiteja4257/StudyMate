@@ -172,7 +172,7 @@ const Home = () => {
             <span className="text-lg font-bold text-white tracking-tight">StudyMate</span>
           </div>
 
-          <div className="hidden sm:flex items-center justify-center gap-8 flex-1">
+          <div className="hidden sm:flex items-center justify-center gap-8">
             <button
               onClick={scrollToSpaces}
               className="text-lg font-medium text-gray-400 hover:text-white transition-colors"

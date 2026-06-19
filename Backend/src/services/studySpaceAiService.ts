@@ -54,7 +54,7 @@ Generate the full educational content for this module.
 Return ONLY a valid JSON object matching this schema:
 {
   "summary": "A 1-2 paragraph overview of what will be learned in this module.",
-  "detailedNotes": "Comprehensive, detailed study notes covering the module's topic. Use markdown formatting (headings, bullet points, bold text). Make it thorough but easy to read.",
+  "detailedNotes": "A 3-4 paragraph long and comprehensive study notes covering the module's topic. Use markdown formatting (headings, bullet points, bold text). Make it thorough but easy to read.",
   "keyConcepts": ["Concept 1", "Concept 2", "Concept 3", "Concept 4", "Concept 5"],
   "flashcards": [
     { "front": "Question or term", "back": "Answer or definition" }
@@ -126,7 +126,7 @@ export const askStudySpaceTutor = async (
 Your primary goal is to help the user understand the material provided in the context below.
 
 MODULE CONTEXT:
-\${context}
+${context}
 
 RULES:
 1. Prioritize the module context when answering. If the answer is in the context, use it and explain it clearly.

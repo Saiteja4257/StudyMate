@@ -12,6 +12,7 @@ import {
   HelpCircle, 
   Share2,
   ChevronLeft,
+  ChevronRight,
   RotateCcw,
   MessageSquare
 } from 'lucide-react';
@@ -21,12 +22,12 @@ interface ModuleDetailProps {
   spaceId: string;
   module: any;
   onProgressUpdate: (moduleId: string, completed: boolean) => void;
+  activeTab: 'notes' | 'flashcards' | 'quiz' | 'visual' | 'chat';
 }
 
-const ModuleDetail: React.FC<ModuleDetailProps> = ({ spaceId, module, onProgressUpdate }) => {
+const ModuleDetail: React.FC<ModuleDetailProps> = ({ spaceId, module, onProgressUpdate, activeTab }) => {
   const [content, setContent] = useState<any>(null);
   const [loading, setLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState<'notes' | 'flashcards' | 'quiz' | 'visual' | 'chat'>('notes');
   
   // Flashcard state
   const [currentCard, setCurrentCard] = useState(0);
@@ -39,7 +40,6 @@ const ModuleDetail: React.FC<ModuleDetailProps> = ({ spaceId, module, onProgress
 
   useEffect(() => {
     // Reset states when module changes
-    setActiveTab('notes');
     setCurrentCard(0);
     setIsFlipped(false);
     setQuizAnswers({});
@@ -88,11 +88,11 @@ const ModuleDetail: React.FC<ModuleDetailProps> = ({ spaceId, module, onProgress
     <div className="animate-fade-in">
       {/* Header section */}
       <div className="mb-8">
-        <div className="flex items-center justify-between mb-4">
-          <h1 className="text-3xl font-bold text-white">{content.title}</h1>
+        <div className="flex items-center justify-end mb-4 ">
+          {/* <h1 className="text-3xl font-bold text-white">{content.title}</h1> */}
           <button
             onClick={() => onProgressUpdate(module._id, !module.completed)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all \${
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all ${
               module.completed 
                 ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/30' 
                 : 'bg-white/[0.05] text-gray-300 border border-white/[0.1] hover:bg-white/[0.1]'
@@ -102,57 +102,7 @@ const ModuleDetail: React.FC<ModuleDetailProps> = ({ spaceId, module, onProgress
             {module.completed ? 'Completed' : 'Mark Complete'}
           </button>
         </div>
-        <p className="text-gray-400 text-lg leading-relaxed">{content.summary}</p>
-      </div>
-
-      {/* Tabs */}
-      <div className="flex overflow-x-auto custom-scrollbar gap-2 mb-8 border-b border-white/[0.06] pb-2">
-        <button
-          onClick={() => setActiveTab('notes')}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors \${
-            activeTab === 'notes' ? 'bg-indigo-500 text-white' : 'text-gray-400 hover:bg-white/[0.05]'
-          }`}
-        >
-          <BookOpen className="w-4 h-4" /> Study Notes
-        </button>
-        {content.flashcards?.length > 0 && (
-          <button
-            onClick={() => setActiveTab('flashcards')}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors \${
-              activeTab === 'flashcards' ? 'bg-indigo-500 text-white' : 'text-gray-400 hover:bg-white/[0.05]'
-            }`}
-          >
-            <Layers className="w-4 h-4" /> Flashcards ({content.flashcards.length})
-          </button>
-        )}
-        {content.quizzes?.length > 0 && (
-          <button
-            onClick={() => setActiveTab('quiz')}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors \${
-              activeTab === 'quiz' ? 'bg-indigo-500 text-white' : 'text-gray-400 hover:bg-white/[0.05]'
-            }`}
-          >
-            <HelpCircle className="w-4 h-4" /> Practice Quiz
-          </button>
-        )}
-        {content.visualTopics && (
-          <button
-            onClick={() => setActiveTab('visual')}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors \${
-              activeTab === 'visual' ? 'bg-indigo-500 text-white' : 'text-gray-400 hover:bg-white/[0.05]'
-            }`}
-          >
-            <Share2 className="w-4 h-4" /> Visual Learning
-          </button>
-        )}
-        <button
-          onClick={() => setActiveTab('chat')}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors \${
-            activeTab === 'chat' ? 'bg-indigo-500 text-white' : 'text-gray-400 hover:bg-white/[0.05]'
-          }`}
-        >
-          <MessageSquare className="w-4 h-4" /> AI Tutor
-        </button>
+        {/* <p className="text-gray-400 text-lg leading-relaxed">{content.summary}</p> */}
       </div>
 
       {/* Tab Content */}
@@ -193,7 +143,7 @@ const ModuleDetail: React.FC<ModuleDetailProps> = ({ spaceId, module, onProgress
               className="relative w-full max-w-2xl aspect-[3/2] perspective-1000 cursor-pointer group"
               onClick={() => setIsFlipped(!isFlipped)}
             >
-              <div className={`w-full h-full duration-500 preserve-3d \${isFlipped ? 'rotate-y-180' : ''}`}>
+              <div className={`w-full h-full duration-500 preserve-3d ${isFlipped ? 'rotate-y-180' : ''}`}>
                 {/* Front */}
                 <div className="absolute inset-0 backface-hidden bg-[#151515] border border-white/[0.1] rounded-3xl p-8 flex flex-col items-center justify-center text-center group-hover:border-indigo-500/50 transition-colors shadow-2xl">
                   <span className="absolute top-6 left-6 text-xs font-bold tracking-widest text-indigo-500/50 uppercase">Question</span>
@@ -300,7 +250,7 @@ const ModuleDetail: React.FC<ModuleDetailProps> = ({ spaceId, module, onProgress
                       );
                     })}
                   </div>
-                  {showResult && q.explanation && (
+                  {quizSubmitted && q.explanation && (
                     <div className="mt-4 p-4 rounded-xl bg-white/[0.03] text-sm text-gray-400">
                       <span className="font-semibold text-white">Explanation: </span>
                       {q.explanation}
