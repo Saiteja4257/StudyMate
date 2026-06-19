@@ -847,12 +847,13 @@ const MindMapTab: React.FC<MindMapTabProps> = ({ document, onDocumentUpdate }) =
 
   if (!mindMapData || !mindMapData.nodes) {
     return (
-      <div className="animate-fade-in">
-        <p className="text-red-400">Invalid mind map data</p>
-        <button onClick={() => setSelectedIndex(null)} className="text-primary mt-4 text-sm hover:underline">
-          ← Back to hub
-        </button>
-      </div>
+      // <div className="animate-fade-in">
+      //   <p className="text-red-400">Invalid mind map data</p>
+      //   <button onClick={() => setSelectedIndex(null)} className="text-primary mt-4 text-sm hover:underline">
+      //     ← Back to hub
+      //   </button>
+      // </div>
+      null
     );
   }
 
