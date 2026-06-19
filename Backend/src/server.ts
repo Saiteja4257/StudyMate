@@ -19,7 +19,7 @@ app.use(
   cors({
     origin: [
       "http://localhost:5173",
-      "https://studymate-8.vercel.app",
+      "https://study-mate-fawn.vercel.app",
     ],
     credentials: true,
   })
