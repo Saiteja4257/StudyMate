@@ -15,15 +15,7 @@ const app = express();
 
 connectDB();
 
-app.use(
-  cors({
-    origin: [
-      "http://localhost:5173",
-      "https://study-mate-fawn.vercel.app",
-    ],
-    credentials: true,
-  })
-);
+app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
