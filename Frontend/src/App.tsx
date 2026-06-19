@@ -12,6 +12,7 @@ import Home from "./pages/Home";
 import Workspace from "./pages/Workspace";
 import StudyPlanner from "./pages/StudyPlanner";
 import AnalyticsDashboard from "./pages/AnalyticsDashboard";
+import Profile from "./pages/Profile";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 
@@ -79,6 +80,15 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <AnalyticsDashboard />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/profile"
+        element={
+          <ProtectedRoute>
+            <Profile />
           </ProtectedRoute>
         }
       />

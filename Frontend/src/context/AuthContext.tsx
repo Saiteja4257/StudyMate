@@ -15,6 +15,7 @@ interface AuthContextType {
   login: (data: any) => Promise<void>;
   register: (data: any) => Promise<void>;
   googleLoginWithCredential: (credential: string) => Promise<void>;
+  updateUser: (user: User) => void;
   logout: () => void;
 }
 
@@ -60,6 +61,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     localStorage.setItem('studymate_user', JSON.stringify(response.user));
   };
 
+  const updateUser = (updatedUser: User) => {
+    setUser(updatedUser);
+    localStorage.setItem('studymate_user', JSON.stringify(updatedUser));
+  };
+
   const logout = () => {
     setToken(null);
     setUser(null);
@@ -68,7 +74,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, isAuthenticated: !!token, loading, login, register, googleLoginWithCredential, logout }}>
+    <AuthContext.Provider value={{ user, token, isAuthenticated: !!token, loading, login, register, googleLoginWithCredential, updateUser, logout }}>
       {children}
     </AuthContext.Provider>
   );

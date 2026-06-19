@@ -26,3 +26,13 @@ export const googleLogin = async (credential: string) => {
   const response = await API.post('/auth/google', { credential });
   return response.data;
 };
+
+export const updateProfile = async (userData: { name?: string; email?: string }) => {
+  const response = await API.put('/auth/profile', userData);
+  return response.data;
+};
+
+export const updatePassword = async (passwordData: { currentPassword?: string; newPassword?: string }) => {
+  const response = await API.put('/auth/password', passwordData);
+  return response.data;
+};

@@ -165,30 +165,33 @@ const Home = () => {
       {/* ─── Top Navigation ─── */}
       <nav className="fixed top-0 w-full z-50 bg-[#0a0a0a]/70 backdrop-blur-2xl border-b border-white/[0.04]">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-2.5 flex-1">
             <Sparkles className="w-5 h-5 text-primary" />
             <span className="text-lg font-bold text-white tracking-tight">StudyMate</span>
           </div>
 
-          <div className="flex items-center gap-5">
+          <div className="hidden sm:flex items-center justify-center gap-8 flex-1">
             <button
               onClick={scrollToSpaces}
-              className="text-sm font-medium text-gray-400 hover:text-white transition-colors hidden sm:block"
+              className="text-lg font-medium text-gray-400 hover:text-white transition-colors"
             >
               My Spaces
             </button>
             <button
               onClick={() => navigate('/study-planner')}
-              className="text-sm font-medium text-gray-400 hover:text-white transition-colors hidden sm:block"
+              className="text-lg font-medium text-gray-400 hover:text-white transition-colors"
             >
               Study Planner
             </button>
             <button
               onClick={() => navigate('/analytics')}
-              className="text-sm font-medium text-gray-400 hover:text-white transition-colors hidden sm:block"
+              className="text-lg font-medium text-gray-400 hover:text-white transition-colors"
             >
               Analytics
             </button>
+          </div>
+
+          <div className="flex items-center justify-end gap-5 flex-1">
             <div className="relative group">
               <button className="w-9 h-9 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white text-sm font-bold ring-2 ring-transparent hover:ring-primary/30 transition-all">
                 {user?.name?.[0]?.toUpperCase() || 'U'}
@@ -198,6 +201,13 @@ const Home = () => {
                   <p className="text-sm font-medium text-white truncate">{user?.name}</p>
                   <p className="text-xs text-gray-500 truncate">{user?.email}</p>
                 </div>
+                <button
+                  onClick={() => navigate('/profile')}
+                  className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-gray-400 hover:text-white hover:bg-white/[0.06] transition-colors"
+                >
+                  <Settings className="w-4 h-4" />
+                  My Profile
+                </button>
                 <button
                   onClick={logout}
                   className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-red-400 hover:bg-red-500/10 transition-colors"
