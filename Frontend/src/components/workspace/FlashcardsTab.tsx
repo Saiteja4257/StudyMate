@@ -24,11 +24,12 @@ const FlashcardsTab: React.FC<FlashcardsTabProps> = ({ document, onDocumentUpdat
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
 
-  // Reset card index when changing decks
+  // Reset state when changing decks or document
   React.useEffect(() => {
     setCurrentIndex(0);
     setIsFlipped(false);
-  }, [selectedDeckIndex]);
+    setError('');
+  }, [selectedDeckIndex, document?._id]);
 
   const handleGenerate = async (regenerate = false) => {
     setLoading(true);

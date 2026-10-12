@@ -1,5 +1,37 @@
 import groq from "../config/groq";
 
+/**
+ * Robust Groq completion runner with automatic model fallback
+ */
+const callGroq = async (options: {
+  messages: any[];
+  primaryModel?: string;
+  fallbackModel?: string;
+  temperature?: number;
+  max_tokens?: number;
+}) => {
+  const primary = options.primaryModel || "openai/gpt-oss-120b";
+  const fallback = options.fallbackModel || "qwen/qwen3.8-27b";
+  try {
+    const completion = await groq.chat.completions.create({
+      model: primary,
+      messages: options.messages,
+      temperature: options.temperature ?? 0.3,
+      max_tokens: options.max_tokens ?? 4096,
+    });
+    return completion.choices[0]?.message?.content || "";
+  } catch (error: any) {
+    console.warn(`[studySpaceAi] Model ${primary} failed (${error.message}). Retrying with ${fallback}...`);
+    const fallbackCompletion = await groq.chat.completions.create({
+      model: fallback,
+      messages: options.messages,
+      temperature: options.temperature ?? 0.3,
+      max_tokens: options.max_tokens ?? 4096,
+    });
+    return fallbackCompletion.choices[0]?.message?.content || "";
+  }
+};
+
 export const generateCourseCurriculum = async (topic: string, goal: string) => {
   const prompt = `You are an expert curriculum designer. Design a comprehensive study course.
   
@@ -25,8 +57,9 @@ Rules:
 - Output ONLY the JSON object, no markdown wrappers like \`\`\`json, no other text.
 `;
 
-  const completion = await groq.chat.completions.create({
-    model: "llama-3.1-8b-instant",
+  return await callGroq({
+    primaryModel: "openai/gpt-oss-20b",
+    fallbackModel: "qwen/qwen3.8-27b",
     messages: [
       {
         role: "system",
@@ -40,8 +73,6 @@ Rules:
     temperature: 0.3,
     max_tokens: 4096,
   });
-
-  return completion.choices[0].message.content;
 };
 
 export const generateModuleContent = async (courseTitle: string, topic: string, moduleTitle: string) => {
@@ -88,8 +119,9 @@ Rules:
 - Output ONLY the JSON object, no markdown wrappers like \`\`\`json, no other text.
 `;
 
-  const completion = await groq.chat.completions.create({
-    model: "llama-3.3-70b-versatile",
+  return await callGroq({
+    primaryModel: "openai/gpt-oss-120b",
+    fallbackModel: "qwen/qwen3.8-27b",
     messages: [
       {
         role: "system",
@@ -103,8 +135,6 @@ Rules:
     temperature: 0.2,
     max_tokens: 8000,
   });
-
-  return completion.choices[0].message.content;
 };
 
 export const askStudySpaceTutor = async (
@@ -117,8 +147,9 @@ export const askStudySpaceTutor = async (
     content: msg.content,
   }));
   
-  const completion = await groq.chat.completions.create({
-    model: "llama-3.3-70b-versatile",
+  return await callGroq({
+    primaryModel: "openai/gpt-oss-120b",
+    fallbackModel: "qwen/qwen3.8-27b",
     messages: [
       {
         role: "system",
@@ -141,7 +172,6 @@ RULES:
       },
     ],
     temperature: 0.2,
+    max_tokens: 2500,
   });
-
-  return completion.choices[0].message.content;
 };

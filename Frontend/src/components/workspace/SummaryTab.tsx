@@ -20,6 +20,10 @@ const SummaryTab: React.FC<SummaryTabProps> = ({ document, onDocumentUpdate }) =
   const [confirmModal, setConfirmModal] = useState<{isOpen: boolean, index: number | null}>({ isOpen: false, index: null });
   const [error, setError] = useState('');
 
+  React.useEffect(() => {
+    setError('');
+  }, [document?._id]);
+
   const handleGenerate = async (regenerate = false) => {
     setLoading(true);
     setError('');

@@ -3,6 +3,7 @@ import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
 import { embeddings } from "../config/embeddings";
 import { askWithContext, generateVisualExplanation } from "./aiService";
 import { DocumentChunk } from "../models/DocumentChunk";
+import { Document } from "../models/Document";
 import mongoose from "mongoose";
 // Store vector stores in memory using documentId
 // const vectorStores = new Map<string, MemoryVectorStore>();
@@ -102,23 +103,31 @@ export const askDocument = async (
   question: string,
   chatHistory: { role: "user" | "assistant"; content: string }[] = []
 ) => {
-  const docs =
-    await retrieveRelevantChunks(
-      documentId,
-      question
-    );
+  let docs: any[] = [];
+  let context = "";
 
-  const context =
-  docs
-    .map((doc) => doc.text)
-    .join("\n\n");
+  try {
+    docs = await retrieveRelevantChunks(documentId, question);
+    if (docs && docs.length > 0) {
+      context = docs.map((doc) => doc.text).join("\n\n");
+    }
+  } catch (error) {
+    console.warn("Vector search failed, falling back to full document text:", error);
+  }
 
-  const answer =
-    await askWithContext(
-      context,
-      question,
-      chatHistory
-    );
+  // Fallback to document extracted text if vector search failed or returned nothing
+  if (!context) {
+    const doc = await Document.findById(documentId);
+    if (doc && doc.extractedText) {
+      context = doc.extractedText.slice(0, 8000);
+    }
+  }
+
+  const answer = await askWithContext(
+    context,
+    question,
+    chatHistory
+  );
 
   return {
     answer,
@@ -130,9 +139,25 @@ export const askVisualDocument = async (
   documentId: string,
   question: string
 ) => {
-  const docs = await retrieveRelevantChunks(documentId, question);
+  let docs: any[] = [];
+  let context = "";
 
-  const context = docs.map((doc) => doc.text).join("\n\n");
+  try {
+    docs = await retrieveRelevantChunks(documentId, question);
+    if (docs && docs.length > 0) {
+      context = docs.map((doc) => doc.text).join("\n\n");
+    }
+  } catch (error) {
+    console.warn("Vector search failed, falling back to full document text:", error);
+  }
+
+  // Fallback to document extracted text if vector search failed or returned nothing
+  if (!context) {
+    const doc = await Document.findById(documentId);
+    if (doc && doc.extractedText) {
+      context = doc.extractedText.slice(0, 8000);
+    }
+  }
 
   const responseText = await generateVisualExplanation(context, question);
   

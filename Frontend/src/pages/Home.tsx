@@ -427,7 +427,7 @@ const Home = () => {
                   <div
                     key={doc._id}
                     onClick={() => navigate(`/space/${doc._id}`)}
-                    className="group relative cursor-pointer rounded-2xl overflow-hidden min-h-[220px] flex flex-col transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:shadow-black/40"
+                    className={`group relative cursor-pointer rounded-2xl overflow-hidden min-h-[220px] flex flex-col transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:shadow-black/40 ${menuOpenId === doc._id ? 'z-20' : ''}`}
                     style={{ background: `linear-gradient(160deg, ${bgColor}, #141414)` }}
                   >
                     <div className="flex-1 p-5 flex flex-col">

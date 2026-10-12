@@ -45,6 +45,7 @@ const QuizTab: React.FC<QuizTabProps> = ({ document, onDocumentUpdate }) => {
 
   // Load previous attempt or reset state when changing quiz version
   useEffect(() => {
+    setError('');
     if (selectedQuizIndex !== null && quizStacks[selectedQuizIndex]?.attempts && quizStacks[selectedQuizIndex].attempts!.length > 0) {
       const attempts = quizStacks[selectedQuizIndex].attempts!;
       const lastAttempt = attempts[attempts.length - 1];
@@ -60,7 +61,7 @@ const QuizTab: React.FC<QuizTabProps> = ({ document, onDocumentUpdate }) => {
       setFinished(false);
       setWeakTopics([]);
     }
-  }, [selectedQuizIndex]);
+  }, [selectedQuizIndex, document?._id]);
 
   const questions: QuizQuestion[] = selectedQuizIndex !== null && quizStacks[selectedQuizIndex] ? quizStacks[selectedQuizIndex].questions : [];
 

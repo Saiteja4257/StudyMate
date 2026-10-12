@@ -154,7 +154,7 @@ const StudySpacesList = () => {
                 <div
                   key={space._id}
                   onClick={() => navigate(`/study-spaces/${space._id}`)}
-                  className="group relative cursor-pointer rounded-3xl overflow-hidden flex flex-col transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:shadow-black/40 border border-white/[0.05] hover:border-white/[0.15]"
+                  className={`group relative cursor-pointer rounded-3xl overflow-hidden flex flex-col transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:shadow-black/40 border border-white/[0.05] hover:border-white/[0.15] ${menuOpenId === space._id ? 'z-20' : ''}`}
                   style={{ background: `linear-gradient(160deg, ${bgColor}, #111)` }}
                 >
                   <div className="flex-1 p-6 flex flex-col relative z-10">

@@ -1,8 +1,41 @@
 import groq from "../config/groq";
 
+/**
+ * Robust Groq completion runner with automatic model fallback
+ */
+const callGroq = async (options: {
+  messages: any[];
+  primaryModel?: string;
+  fallbackModel?: string;
+  temperature?: number;
+  max_tokens?: number;
+}) => {
+  const primary = options.primaryModel || "qwen/qwen3.8-27b";
+  const fallback = options.fallbackModel || "openai/gpt-oss-120b";
+  try {
+    const completion = await groq.chat.completions.create({
+      model: primary,
+      messages: options.messages,
+      temperature: options.temperature ?? 0.3,
+      max_tokens: options.max_tokens ?? 2000,
+    });
+    return completion.choices[0]?.message?.content || "";
+  } catch (error: any) {
+    console.warn(`[aiService] Model ${primary} failed (${error.message}). Retrying with ${fallback}...`);
+    const fallbackCompletion = await groq.chat.completions.create({
+      model: fallback,
+      messages: options.messages,
+      temperature: options.temperature ?? 0.3,
+      max_tokens: options.max_tokens ?? 2000,
+    });
+    return fallbackCompletion.choices[0]?.message?.content || "";
+  }
+};
+
 export const generateSummary = async (text: string) => {
-  const completion = await groq.chat.completions.create({
-    model: "qwen/qwen3-32b", 
+  return await callGroq({
+    primaryModel: "qwen/qwen3.8-27b",
+    fallbackModel: "openai/gpt-oss-120b",
     messages: [
       {
         role: "system",
@@ -15,9 +48,8 @@ export const generateSummary = async (text: string) => {
       },
     ],
     temperature: 0.3,
+    max_tokens: 1500,
   });
-
-  return completion.choices[0].message.content;
 };
 
 export const generateQuiz = async (text: string, previousQuestions: string[] = []) => {
@@ -25,8 +57,9 @@ export const generateQuiz = async (text: string, previousQuestions: string[] = [
     ? `\nCRITICAL INSTRUCTION: DO NOT generate questions that are identical or highly similar to the following existing questions:\n${previousQuestions.map((q, i) => `${i+1}. ${q}`).join('\n')}\n`
     : "";
 
-  const completion = await groq.chat.completions.create({
-    model: "qwen/qwen3-32b",
+  return await callGroq({
+    primaryModel: "qwen/qwen3.8-27b",
+    fallbackModel: "openai/gpt-oss-120b",
     messages: [
       {
         role: "system",
@@ -57,14 +90,14 @@ Format:
       },
     ],
     temperature: 0.3,
+    max_tokens: 2000,
   });
-
-  return completion.choices[0].message.content;
 };
 
 export const generateFlashcards = async (text: string) => {
-  const completion = await groq.chat.completions.create({
-    model: "qwen/qwen3-32b",
+  return await callGroq({
+    primaryModel: "qwen/qwen3.8-27b",
+    fallbackModel: "openai/gpt-oss-120b",
     messages: [
       {
         role: "system",
@@ -89,9 +122,8 @@ Format:
       },
     ],
     temperature: 0.3,
+    max_tokens: 2000,
   });
-
-  return completion.choices[0].message.content;
 };
 
 export const analyzeQuizAttempt = async (questions: any[], userAnswers: string[]) => {
@@ -103,8 +135,9 @@ export const analyzeQuizAttempt = async (questions: any[], userAnswers: string[]
 
   const promptStr = incorrect.map((q, i) => `Q: ${q.question}\nCorrect Answer: ${q.answer}\nUser Answer: ${userAnswers[questions.indexOf(q)]}`).join("\n\n");
 
-  const completion = await groq.chat.completions.create({
-    model: "qwen/qwen3-32b",
+  return await callGroq({
+    primaryModel: "qwen/qwen3.8-27b",
+    fallbackModel: "openai/gpt-oss-120b",
     messages: [
       {
         role: "system",
@@ -120,9 +153,8 @@ ${promptStr}
       },
     ],
     temperature: 0.3,
+    max_tokens: 1000,
   });
-
-  return completion.choices[0].message.content;
 };
 
 export const askWithContext = async (
@@ -135,15 +167,14 @@ export const askWithContext = async (
     role: msg.role as "user" | "assistant",
     content: msg.content,
   }));
-    console.log(context);
-  const completion =
-    await groq.chat.completions.create({
-      model: "llama-3.3-70b-versatile",
 
-      messages: [
-        {
-          role: "system",
-          content: `You are StudyMate AI — a friendly, knowledgeable study assistant chatbot.
+  return await callGroq({
+    primaryModel: "openai/gpt-oss-120b",
+    fallbackModel: "qwen/qwen3.8-27b",
+    messages: [
+      {
+        role: "system",
+        content: `You are StudyMate AI — a friendly, knowledgeable study assistant chatbot.
 
 You have TWO modes of operation:
 
@@ -160,23 +191,22 @@ RULES:
 
 DOCUMENT CONTEXT (use this for document-related questions):
 ${context}`,
-        },
-        ...historyMessages,
-        {
-          role: "user",
-          content: question,
-        },
-      ],
-
-      temperature: 0.2,
-    });
-
-  return completion.choices[0].message.content;
+      },
+      ...historyMessages,
+      {
+        role: "user",
+        content: question,
+      },
+    ],
+    temperature: 0.2,
+    max_tokens: 2500,
+  });
 };
 
 export const generateMindMap = async (text: string) => {
-  const completion = await groq.chat.completions.create({
-    model: "openai/gpt-oss-120b",
+  return await callGroq({
+    primaryModel: "openai/gpt-oss-120b",
+    fallbackModel: "qwen/qwen3.8-27b",
     messages: [
       {
         role: "system",
@@ -199,8 +229,6 @@ Rules:
     temperature: 0.3,
     max_tokens: 4096,
   });
-
-  return completion.choices[0].message.content;
 };
 
 export const generateStudySchedule = async (
@@ -238,8 +266,9 @@ Rules:
 - Include "revision" and "quiz" sessions near the exam date.
 - Return ONLY the JSON array, no markdown wrappers, no explanations.`;
 
-  const completion = await groq.chat.completions.create({
-    model: "openai/gpt-oss-120b",
+  return await callGroq({
+    primaryModel: "openai/gpt-oss-120b",
+    fallbackModel: "qwen/qwen3.8-27b",
     messages: [
       {
         role: "system",
@@ -253,8 +282,6 @@ Rules:
     temperature: 0.2,
     max_tokens: 4096,
   });
-
-  return completion.choices[0].message.content;
 };
 
 export const generateTaskContent = async (topic: string, title: string) => {
@@ -282,8 +309,9 @@ Rules:
 - The "answer" must exactly match one of the "options".
 - Output ONLY the JSON object, no markdown wrappers like \`\`\`json, no other text.`;
 
-  const completion = await groq.chat.completions.create({
-    model: "llama-3.1-8b-instant",
+  return await callGroq({
+    primaryModel: "openai/gpt-oss-20b",
+    fallbackModel: "qwen/qwen3.8-27b",
     messages: [
       {
         role: "system",
@@ -297,13 +325,12 @@ Rules:
     temperature: 0.3,
     max_tokens: 4096,
   });
-
-  return completion.choices[0].message.content;
 };
 
 export const generateChatTitle = async (firstMessage: string) => {
-  const completion = await groq.chat.completions.create({
-    model: "llama-3.1-8b-instant",
+  const title = await callGroq({
+    primaryModel: "openai/gpt-oss-20b",
+    fallbackModel: "qwen/qwen3.8-27b",
     messages: [
       {
         role: "system",
@@ -315,9 +342,10 @@ export const generateChatTitle = async (firstMessage: string) => {
       },
     ],
     temperature: 0.3,
+    max_tokens: 50,
   });
 
-  return completion.choices[0].message.content?.trim() || "New Chat";
+  return title?.trim() || "New Chat";
 };
 
 export const generateVisualExplanation = async (context: string, question: string) => {
@@ -360,8 +388,9 @@ Rules for Diagram Generation:
 4. Keep node labels short (2-5 words).
 5. Output ONLY valid JSON, without any markdown formatting wrappers like \`\`\`json.`;
 
-  const completion = await groq.chat.completions.create({
-    model: "llama-3.3-70b-versatile",
+  return await callGroq({
+    primaryModel: "openai/gpt-oss-120b",
+    fallbackModel: "qwen/qwen3.8-27b",
     messages: [
       {
         role: "system",
@@ -375,6 +404,4 @@ Rules for Diagram Generation:
     temperature: 0.2,
     max_tokens: 4096,
   });
-
-  return completion.choices[0].message.content;
 };
