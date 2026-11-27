@@ -69,12 +69,9 @@ const Home = () => {
     try {
       const formData = new FormData();
       formData.append('pdf', file);
-      const res = await documentAPI.upload(formData);
-      await fetchDocuments();
+      await documentAPI.upload(formData);
 
-    if (res.data.documentId) {
-    navigate(`/space/${res.data.documentId}`);
-    }
+      await fetchDocuments();
     } catch (error) {
       console.error('Upload failed', error);
     } finally {
