@@ -95,18 +95,13 @@ export const sendVerificationEmail = async ({
       <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 520px; margin: 0 auto; padding: 32px 24px; background: #0f1117; color: #e5e7eb; border-radius: 16px; border: 1px solid #1f2937;">
         <h2 style="margin: 0 0 8px; color: #ffffff; font-size: 22px;">Verify your email</h2>
         <p style="margin: 0 0 24px; color: #9ca3af; font-size: 15px; line-height: 1.5;">
-          Hi ${safeName}, enter this 6-digit code in StudyMate AI or click the button below to verify your email address.
+          Hi ${safeName}, enter this 6-digit code in StudyMate AI to verify your email address.
         </p>
         <div style="background: #181b24; border: 1px solid #374151; border-radius: 12px; padding: 20px; text-align: center; margin-bottom: 24px;">
           <span style="font-size: 32px; font-weight: 700; letter-spacing: 8px; color: #60a5fa; font-family: monospace;">${code}</span>
         </div>
-        <div style="text-align: center; margin-bottom: 24px;">
-          <a href="${verifyUrl}" style="display: inline-block; background: #3b82f6; color: #ffffff; text-decoration: none; font-weight: 600; padding: 12px 28px; border-radius: 10px; font-size: 15px;">
-            Verify Email Address
-          </a>
-        </div>
         <p style="margin: 0; color: #6b7280; font-size: 13px; line-height: 1.5;">
-          This code and link expire in 15 minutes. If you didn't request this, you can safely ignore this email.
+          This code expires in 15 minutes. If you didn't request this, you can safely ignore this email.
         </p>
       </div>
     `,
