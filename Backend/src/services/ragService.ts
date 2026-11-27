@@ -12,53 +12,76 @@ export const processDocumentForRAG = async (
   documentId: string,
   text: string
 ) => {
-  const splitter = new RecursiveCharacterTextSplitter({
-    chunkSize: 1000,
-    chunkOverlap: 200,
-  });
+  try {
+    console.log("========== RAG STARTED ==========");
+    console.log("Document ID:", documentId);
+    console.log("Text length:", text.length);
 
-  const chunks = await splitter.createDocuments(
-    [text],
-    [
-      {
+    if (!text.trim()) {
+      throw new Error("Document text is empty");
+    }
+
+    const splitter = new RecursiveCharacterTextSplitter({
+      chunkSize: 1000,
+      chunkOverlap: 200,
+    });
+
+    const chunks = await splitter.createDocuments(
+      [text],
+      [{ documentId }]
+    );
+
+    console.log("Total chunks:", chunks.length);
+
+    const texts = chunks.map(
+      (chunk) => chunk.pageContent
+    );
+
+    if (texts.length === 0) {
+      throw new Error("No chunks generated");
+    }
+
+    console.log("Generating embeddings...");
+
+    const vectors = await embeddings.embedDocuments(texts);
+
+    console.log("Embeddings generated:", vectors.length);
+
+    if (!vectors.length || vectors.length !== chunks.length) {
+      throw new Error("Invalid embedding response");
+    }
+
+    console.log("Embedding dimensions:", vectors[0].length);
+
+    const chunkDocs = chunks.map(
+      (chunk, index) => ({
         documentId,
-      },
-    ]
-  );
+        text: chunk.pageContent,
+        embedding: vectors[index],
+        chunkIndex: index,
+      })
+    );
 
-  const texts = chunks.map(
-    (chunk) => chunk.pageContent
-  );
+    console.log("Deleting previous chunks...");
 
-  const vectors =
-    await embeddings.embedDocuments(texts);
-
-  console.log(
-    "Embedding Dimensions:",
-    vectors[0].length
-  );
-
-  // Remove old chunks if document is reprocessed
-  await DocumentChunk.deleteMany({
-    documentId,
-  });
-
-  const chunkDocs = chunks.map(
-    (chunk, index) => ({
+    await DocumentChunk.deleteMany({
       documentId,
-      text: chunk.pageContent,
-      embedding: vectors[index],
-      chunkIndex: index,
-    })
-  );
+    });
 
-  await DocumentChunk.insertMany(
-    chunkDocs
-  );
+    console.log("Inserting chunks into MongoDB...");
 
-  console.log(
-    `Stored ${chunkDocs.length} chunks in Atlas`
-  );
+    await DocumentChunk.insertMany(chunkDocs);
+
+    console.log(`Stored ${chunkDocs.length} chunks in Atlas`);
+    console.log("========== RAG COMPLETED ==========");
+
+  } catch (error) {
+    console.error("========== RAG FAILED ==========");
+    console.error("Document ID:", documentId);
+    console.error("RAG Error:", error);
+
+    throw error;
+  }
 };
 
 // Retrieve relevant chunks
