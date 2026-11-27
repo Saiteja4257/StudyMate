@@ -1,13 +1,44 @@
 import { Router } from "express";
-import { registerUser, loginUser, getProfile, googleLogin, updateProfile, updatePassword } from "../controllers/authController";
+import rateLimit from "express-rate-limit";
+import {
+  registerUser,
+  loginUser,
+  verifyEmail,
+  resendVerification,
+  getProfile,
+  googleLogin,
+  updateProfile,
+  updatePassword,
+} from "../controllers/authController";
 import { protect } from "../middleware/authMiddleware";
+
 const router = Router();
 
-router.post("/register", registerUser);
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: "Too many authentication attempts. Please try again later." },
+});
 
-router.post("/login", loginUser );
+const verificationLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: "Too many verification attempts. Please try again later." },
+});
 
-router.post("/google", googleLogin);
+router.post("/register", authLimiter, registerUser);
+
+router.post("/login", authLimiter, loginUser);
+
+router.post("/google", authLimiter, googleLogin);
+
+router.post("/verify-email", verificationLimiter, verifyEmail);
+
+router.post("/resend-verification", verificationLimiter, resendVerification);
 
 router.get(
   "/profile",
