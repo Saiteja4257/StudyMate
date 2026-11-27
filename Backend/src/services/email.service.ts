@@ -54,6 +54,7 @@ const escapeHtml = (str: string): string =>
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#39;");
 
+  
 export const sendVerificationEmail = async ({
   to,
   name,

@@ -39,7 +39,12 @@ const Register = () => {
       setError('Please fill in all fields');
       return;
     }
+    const emailRegex = /^[a-zA-Z0-9.]+@gmail\.com$/i;
 
+  if (!emailRegex.test(email.trim())) {
+    setError('Only Gmail addresses are allowed');
+    return;
+  }
     if (password !== confirmPassword) {
       setError('Passwords do not match');
       return;

@@ -208,6 +208,14 @@ export const verifyEmail = async (req: Request, res: Response) => {
     } else if (rawEmail && typeof rawCode === "string") {
       const email = normalizeEmail(rawEmail);
       const code = rawCode.trim();
+      const emailRegex = /^[a-zA-Z0-9.]+@gmail\.com$/i;
+
+      if (typeof email !== "string" || !emailRegex.test(email.trim())) {
+        return res.status(400).json({
+        success: false,
+        message: "Only Gmail addresses are allowed"
+        });
+      }
 
       if (!email || !/^\d{6}$/.test(code)) {
         return res.status(400).json({
