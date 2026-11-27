@@ -77,6 +77,10 @@ const documentSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
+    cloudinaryPublicId: {
+      type: String,
+      default:"", 
+    },
   },
   {
     timestamps: true,
