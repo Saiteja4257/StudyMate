@@ -4,6 +4,7 @@ import pdfParse from "pdf-parse";
 import { Document } from "../models/Document";
 import { processDocumentForRAG } from "../services/ragService";
 import { uploadBufferToCloudinary, deleteFromCloudinary } from "../config/cloudinary";
+import { CacheKeys, CacheService, CacheTTL } from "../services/cache.service";
 
 export const uploadDocument = async (
   req: Request,
@@ -40,6 +41,14 @@ export const uploadDocument = async (
       document.extractedText
     );
 
+    const userId = req.user?.id || req.user?._id;
+    if (userId) {
+      await CacheService.deleteMany([
+        CacheKeys.userDocs(userId.toString()),
+        CacheKeys.dashboardAnalytics(userId.toString()),
+      ]);
+    }
+
     res.status(200).json({
       message: "PDF Uploaded and Parsed Successfully",
       documentId: document._id,
@@ -59,13 +68,22 @@ export const getDocument = async (
   res: Response
 ) => {
   try {
+    const docId = String(req.params.id);
+    const cacheKey = CacheKeys.docDetails(docId);
+    const cached = await CacheService.get(cacheKey);
+    if (cached) {
+      return res.status(200).json(cached);
+    }
+
     // Exclude extractedText from response — frontend never needs raw text
-    const document = await Document.findById(req.params.id).select("-extractedText");
+    const document = await Document.findById(docId).select("-extractedText").lean();
     if (!document) {
       return res.status(404).json({
         message: "Document not found",
       });
     }
+
+    await CacheService.set(cacheKey, document, CacheTTL.DOCUMENT);
     res.status(200).json(document);
   } catch (error) {
     console.error(error);
@@ -80,10 +98,23 @@ export const getAllDocuments = async (
   res: Response
 ) => {
   try {
+    const userId = (req.user?.id || req.user?._id)?.toString();
+    if (userId) {
+      const cached = await CacheService.get(CacheKeys.userDocs(userId));
+      if (cached) {
+        return res.status(200).json(cached);
+      }
+    }
+
     // Only return documents belonging to the authenticated user
     const documents = await Document.find({ uploadedBy: req.user?.id })
       .select("title createdAt processingStatus summary quiz flashcards")
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .lean();
+
+    if (userId) {
+      await CacheService.set(CacheKeys.userDocs(userId), documents, CacheTTL.SHORT);
+    }
     res.status(200).json(documents);
   } catch (error) {
     console.error(error);
@@ -128,6 +159,11 @@ export const deleteDocument = async (
 
     // 2. Delete document record from MongoDB
     await Document.findByIdAndDelete(req.params.id);
+
+    await CacheService.invalidateAllForDocument(
+      String(req.params.id),
+      document.uploadedBy?.toString()
+    );
 
     res.status(200).json({
       message: "Document deleted successfully",

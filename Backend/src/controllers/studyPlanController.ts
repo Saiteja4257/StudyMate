@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { StudyPlan } from "../models/StudyPlan";
 import { Document } from "../models/Document";
 import { generateStudySchedule, generateTaskContent } from "../services/aiService";
+import { CacheKeys, CacheService, CacheTTL } from "../services/cache.service";
 
 // Helper to clean LLM JSON output
 const cleanJsonResponse = (text: string | null | undefined): string => {
@@ -111,6 +112,11 @@ export const generateStudyPlanController = async (req: any, res: any) => {
       progress: 0,
     });
 
+    await CacheService.deleteMany([
+      CacheKeys.userStudyPlans(userId.toString()),
+      CacheKeys.dashboardAnalytics(userId.toString()),
+    ]);
+
     res.status(201).json({ success: true, studyPlan });
   } catch (error: any) {
     console.error(error);
@@ -120,7 +126,15 @@ export const generateStudyPlanController = async (req: any, res: any) => {
 
 export const getStudyPlans = async (req: any, res: any) => {
   try {
-    const studyPlans = await StudyPlan.find({ userId: req.user.id }).sort({ createdAt: -1 });
+    const userId = req.user.id.toString();
+    const cacheKey = CacheKeys.userStudyPlans(userId);
+    const cached = await CacheService.get(cacheKey);
+    if (cached) {
+      return res.status(200).json({ success: true, studyPlans: cached });
+    }
+
+    const studyPlans = await StudyPlan.find({ userId }).sort({ createdAt: -1 }).lean();
+    await CacheService.set(cacheKey, studyPlans, CacheTTL.SHORT);
     res.status(200).json({ success: true, studyPlans });
   } catch (error: any) {
     res.status(500).json({ success: false, message: error.message });
@@ -131,8 +145,9 @@ export const updateTaskStatus = async (req: any, res: any) => {
   try {
     const { id, taskId } = req.params;
     const { completed } = req.body;
+    const userId = req.user.id.toString();
 
-    const studyPlan = await StudyPlan.findOne({ _id: id, userId: req.user.id });
+    const studyPlan = await StudyPlan.findOne({ _id: id, userId });
     
     if (!studyPlan) {
       return res.status(404).json({ success: false, message: "Study plan not found" });
@@ -152,6 +167,11 @@ export const updateTaskStatus = async (req: any, res: any) => {
 
     await studyPlan.save();
 
+    await CacheService.deleteMany([
+      CacheKeys.userStudyPlans(userId),
+      CacheKeys.dashboardAnalytics(userId),
+    ]);
+
     res.status(200).json({ success: true, studyPlan });
   } catch (error: any) {
     res.status(500).json({ success: false, message: error.message });
@@ -161,11 +181,18 @@ export const updateTaskStatus = async (req: any, res: any) => {
 export const deleteStudyPlan = async (req: any, res: any) => {
   try {
     const { id } = req.params;
-    const studyPlan = await StudyPlan.findOneAndDelete({ _id: id, userId: req.user.id });
+    const userId = req.user.id.toString();
+    const studyPlan = await StudyPlan.findOneAndDelete({ _id: id, userId });
 
     if (!studyPlan) {
       return res.status(404).json({ success: false, message: "Study plan not found" });
     }
+
+    await CacheService.deleteMany([
+      CacheKeys.userStudyPlans(userId),
+      CacheKeys.dashboardAnalytics(userId),
+    ]);
+    await CacheService.deleteByPrefix(`studyplan:${userId}:${id}:`);
 
     res.status(200).json({ success: true, message: "Study plan deleted" });
   } catch (error: any) {
@@ -176,7 +203,15 @@ export const deleteStudyPlan = async (req: any, res: any) => {
 export const getTaskContentController = async (req: any, res: any) => {
   try {
     const { id, taskId } = req.params;
-    const studyPlan = await StudyPlan.findOne({ _id: id, userId: req.user.id });
+    const userId = req.user.id.toString();
+    const cacheKey = CacheKeys.studyPlanTask(userId, String(id), String(taskId));
+
+    const cachedContent = await CacheService.get(cacheKey);
+    if (cachedContent) {
+      return res.status(200).json({ success: true, content: cachedContent });
+    }
+
+    const studyPlan = await StudyPlan.findOne({ _id: id, userId });
 
     if (!studyPlan) {
       return res.status(404).json({ success: false, message: "Study plan not found" });
@@ -191,6 +226,7 @@ export const getTaskContentController = async (req: any, res: any) => {
 
     // Return cached content if it exists
     if (task.content) {
+      await CacheService.set(cacheKey, task.content, CacheTTL.AI_CONTENT);
       return res.status(200).json({ success: true, content: task.content });
     }
 
@@ -212,6 +248,9 @@ export const getTaskContentController = async (req: any, res: any) => {
     // Mongoose mixed array update requires markModified
     studyPlan.markModified('generatedPlan');
     await studyPlan.save();
+
+    await CacheService.set(cacheKey, contentObj, CacheTTL.AI_CONTENT);
+    await CacheService.delete(CacheKeys.userStudyPlans(userId));
 
     res.status(200).json({ success: true, content: contentObj });
   } catch (error: any) {

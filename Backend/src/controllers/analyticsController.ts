@@ -1,10 +1,19 @@
 import { Request, Response } from "express";
 import { Document } from "../models/Document";
 import { StudyPlan } from "../models/StudyPlan";
+import { CacheKeys, CacheService, CacheTTL } from "../services/cache.service";
 
 export const getDashboardAnalytics = async (req: any, res: Response) => {
   try {
-    const userId = req.user?.id || req.user?._id;
+    const userId = (req.user?.id || req.user?._id)?.toString();
+    const cacheKey = userId ? CacheKeys.dashboardAnalytics(userId) : null;
+
+    if (cacheKey) {
+      const cached = await CacheService.get(cacheKey);
+      if (cached) {
+        return res.status(200).json(cached);
+      }
+    }
 
     const documents = await Document.find({ uploadedBy: userId });
     const studyPlans = await StudyPlan.find({ userId });
@@ -138,7 +147,7 @@ export const getDashboardAnalytics = async (req: any, res: Response) => {
     const finalMonthlyActivity = monthlyActivity.map(({ name, activity }) => ({ name, activity }));
 
     // Prepare response
-    res.status(200).json({
+    const responsePayload = {
       totalDocumentsUploaded,
       totalQuestionsAsked,
       totalQuizAttempts,
@@ -153,7 +162,13 @@ export const getDashboardAnalytics = async (req: any, res: Response) => {
         remainingTasks: totalTasks - completedTasks,
         totalTasks
       }
-    });
+    };
+
+    if (cacheKey) {
+      await CacheService.set(cacheKey, responsePayload, CacheTTL.SHORT);
+    }
+
+    res.status(200).json(responsePayload);
 
   } catch (error: any) {
     console.error("Analytics Error:", error);
@@ -164,10 +179,18 @@ export const getDashboardAnalytics = async (req: any, res: Response) => {
 export const getDocumentAnalytics = async (req: any, res: Response) => {
   try {
     const documentId = req.query.documentId;
-    const userId = req.user?.id || req.user?._id;
+    const userId = (req.user?.id || req.user?._id)?.toString();
 
     if (!documentId) {
       return getDashboardAnalytics(req, res);
+    }
+
+    const cacheKey = userId ? CacheKeys.docAnalytics(userId, String(documentId)) : null;
+    if (cacheKey) {
+      const cached = await CacheService.get(cacheKey);
+      if (cached) {
+        return res.status(200).json(cached);
+      }
     }
 
     const document = await Document.findOne({ _id: documentId, uploadedBy: userId });
@@ -208,7 +231,12 @@ export const getDocumentAnalytics = async (req: any, res: Response) => {
       .map(entry => ({ name: entry[0], count: entry[1] }))
       .slice(0, 5);
 
-    return res.status(200).json({ stats, weakTopics });
+    const payload = { stats, weakTopics };
+    if (cacheKey) {
+      await CacheService.set(cacheKey, payload, CacheTTL.SHORT);
+    }
+
+    return res.status(200).json(payload);
 
   } catch (error: any) {
     console.error("Document Analytics Error:", error);

@@ -9,6 +9,7 @@ import aiRoutes from "./routes/aiRoutes";
 import analyticsRoutes from "./routes/analyticsRoutes";
 import studyPlanRoutes from "./routes/studyPlanRoutes";
 import studySpaceRoutes from "./routes/studySpaceRoutes";
+import rateLimit from "express-rate-limit";
 dotenv.config();
 
 const app = express();
@@ -24,6 +25,17 @@ app.use(cors({
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+const apiLimiter = rateLimit({
+    windowMs: 60 * 1000,
+    limit: 100,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: {
+        error: "Too many requests. Please try again later."
+    }
+});
+
+app.use("/api", apiLimiter);
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 app.use("/api/auth", authRoutes);
 app.use("/api/documents", documentRoutes);

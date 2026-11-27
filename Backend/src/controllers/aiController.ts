@@ -10,6 +10,7 @@ import {
 } from "../services/aiService";
 
 import { askDocument, askVisualDocument } from "../services/ragService"; 
+import { CacheKeys, CacheService, CacheTTL } from "../services/cache.service";
 
 // Helper to clean LLM JSON output
 const cleanJsonResponse = (
@@ -43,7 +44,23 @@ export const summarizeDocument = async (
   res: Response
 ) => {
   try {
-    const document = await Document.findById(req.params.id);
+    const docId = String(req.params.id);
+    const regenerate = req.query.regenerate === "true";
+    const cacheKey = CacheKeys.docSummaries(docId);
+
+    if (!regenerate) {
+      const cached = await CacheService.get<{ summary: string; summaries: any[] }>(cacheKey);
+      if (cached) {
+        return res.status(200).json({
+          success: true,
+          summary: cached.summary,
+          summaries: cached.summaries,
+          cached: true,
+        });
+      }
+    }
+
+    const document = await Document.findById(docId);
 
     if (!document) {
       return res.status(404).json({
@@ -51,17 +68,21 @@ export const summarizeDocument = async (
       });
     }
 
-    const regenerate = req.query.regenerate === "true";
-
     // Cache-first: return stored summary if it exists and regenerate is not requested
     const existingSummaries = document.summaries && document.summaries.length > 0 
       ? document.summaries 
       : (document.summary ? [{ content: document.summary, createdAt: document.createdAt }] : []);
 
     if (existingSummaries.length > 0 && !regenerate) {
+      const latestSummary = existingSummaries[existingSummaries.length - 1].content;
+      await CacheService.set(
+        cacheKey,
+        { summary: latestSummary, summaries: existingSummaries },
+        CacheTTL.AI_CONTENT
+      );
       return res.status(200).json({
         success: true,
-        summary: existingSummaries[existingSummaries.length - 1].content,
+        summary: latestSummary,
         summaries: existingSummaries,
         cached: true,
       });
@@ -77,13 +98,20 @@ export const summarizeDocument = async (
     const newSummaries = [...existingSummaries, newSummaryObj];
 
     // Save to MongoDB using findByIdAndUpdate to avoid VersionError
-    await Document.findByIdAndUpdate(req.params.id, {
+    await Document.findByIdAndUpdate(docId, {
       $set: {
         summary: summary,
         summaries: newSummaries,
         lastGeneratedAt: new Date(),
       },
     });
+
+    await CacheService.set(
+      cacheKey,
+      { summary, summaries: newSummaries },
+      CacheTTL.AI_CONTENT
+    );
+    await CacheService.invalidateDocumentDerived(docId, document.uploadedBy?.toString());
 
     res.status(200).json({
       success: true,
@@ -101,7 +129,8 @@ export const summarizeDocument = async (
 
 export const deleteSummary = async (req: any, res: any) => {
   try {
-    const document = await Document.findById(req.params.id);
+    const docId = String(req.params.id);
+    const document = await Document.findById(docId);
 
     if (!document) {
       return res.status(404).json({ message: "Document not found" });
@@ -128,12 +157,23 @@ export const deleteSummary = async (req: any, res: any) => {
     // Determine the latest summary for the 'summary' field fallback
     const latestSummary = summaries.length > 0 ? summaries[summaries.length - 1].content : "";
 
-    await Document.findByIdAndUpdate(req.params.id, {
+    await Document.findByIdAndUpdate(docId, {
       $set: {
         summary: latestSummary,
         summaries: summaries,
       },
     });
+
+    if (summaries.length > 0) {
+      await CacheService.set(
+        CacheKeys.docSummaries(docId),
+        { summary: latestSummary, summaries },
+        CacheTTL.AI_CONTENT
+      );
+    } else {
+      await CacheService.delete(CacheKeys.docSummaries(docId));
+    }
+    await CacheService.invalidateDocumentDerived(docId, document.uploadedBy?.toString());
 
     res.status(200).json({
       success: true,
@@ -155,7 +195,23 @@ export const generateQuizController = async (
   res: Response
 ) => {
   try {
-    const document = await Document.findById(req.params.id);
+    const docId = String(req.params.id);
+    const regenerate = req.query.regenerate === "true";
+    const cacheKey = CacheKeys.docQuizzes(docId);
+
+    if (!regenerate) {
+      const cached = await CacheService.get<{ quiz: any[]; quizzes: any[] }>(cacheKey);
+      if (cached) {
+        return res.status(200).json({
+          success: true,
+          quiz: cached.quiz,
+          quizzes: cached.quizzes,
+          cached: true,
+        });
+      }
+    }
+
+    const document = await Document.findById(docId);
 
     if (!document) {
       return res.status(404).json({
@@ -163,17 +219,21 @@ export const generateQuizController = async (
       });
     }
 
-    const regenerate = req.query.regenerate === "true";
-
     // Cache-first: return stored quiz if it exists
     const existingQuizzes = document.quizzes && document.quizzes.length > 0 
       ? document.quizzes 
       : (document.quiz && document.quiz.length > 0 ? [{ questions: document.quiz, createdAt: document.createdAt }] : []);
 
     if (existingQuizzes.length > 0 && !regenerate) {
+      const latestQuiz = existingQuizzes[existingQuizzes.length - 1].questions;
+      await CacheService.set(
+        cacheKey,
+        { quiz: latestQuiz, quizzes: existingQuizzes },
+        CacheTTL.AI_CONTENT
+      );
       return res.status(200).json({
         success: true,
-        quiz: existingQuizzes[existingQuizzes.length - 1].questions,
+        quiz: latestQuiz,
         quizzes: existingQuizzes,
         cached: true,
       });
@@ -202,13 +262,20 @@ export const generateQuizController = async (
     const newQuizzes = [...existingQuizzes, newQuizObj];
 
     // Save to MongoDB using findByIdAndUpdate to avoid VersionError
-    await Document.findByIdAndUpdate(req.params.id, {
+    await Document.findByIdAndUpdate(docId, {
       $set: {
         quiz: quizArray,
         quizzes: newQuizzes,
         lastGeneratedAt: new Date(),
       },
     });
+
+    await CacheService.set(
+      cacheKey,
+      { quiz: quizArray, quizzes: newQuizzes },
+      CacheTTL.AI_CONTENT
+    );
+    await CacheService.invalidateDocumentDerived(docId, document.uploadedBy?.toString());
 
     res.status(200).json({
       success: true,
@@ -231,7 +298,23 @@ export const generateFlashcardsController = async (
   res: Response
 ) => {
   try {
-    const document = await Document.findById(req.params.id);
+    const docId = String(req.params.id);
+    const regenerate = req.query.regenerate === "true";
+    const cacheKey = CacheKeys.docFlashcards(docId);
+
+    if (!regenerate) {
+      const cached = await CacheService.get<{ flashcards: any[]; flashcardDecks: any[] }>(cacheKey);
+      if (cached) {
+        return res.status(200).json({
+          success: true,
+          flashcards: cached.flashcards,
+          flashcardDecks: cached.flashcardDecks,
+          cached: true,
+        });
+      }
+    }
+
+    const document = await Document.findById(docId);
     
     if (!document) {
       return res.status(404).json({
@@ -239,17 +322,21 @@ export const generateFlashcardsController = async (
       });
     }
 
-    const regenerate = req.query.regenerate === "true";
-
     // Cache-first: return stored flashcards if they exist
     const existingDecks = document.flashcardDecks && document.flashcardDecks.length > 0 
       ? document.flashcardDecks 
       : (document.flashcards && document.flashcards.length > 0 ? [{ cards: document.flashcards, createdAt: document.createdAt }] : []);
 
     if (existingDecks.length > 0 && !regenerate) {
+      const latestFlashcards = existingDecks[existingDecks.length - 1].cards;
+      await CacheService.set(
+        cacheKey,
+        { flashcards: latestFlashcards, flashcardDecks: existingDecks },
+        CacheTTL.AI_CONTENT
+      );
       return res.status(200).json({
         success: true,
-        flashcards: existingDecks[existingDecks.length - 1].cards,
+        flashcards: latestFlashcards,
         flashcardDecks: existingDecks,
         cached: true,
       });
@@ -267,13 +354,20 @@ export const generateFlashcardsController = async (
     const newDecks = [...existingDecks, newDeckObj];
 
     // Save to MongoDB using findByIdAndUpdate to avoid VersionError
-    await Document.findByIdAndUpdate(req.params.id, {
+    await Document.findByIdAndUpdate(docId, {
       $set: {
         flashcards: flashcardsArray,
         flashcardDecks: newDecks,
         lastGeneratedAt: new Date(),
       },
     });
+
+    await CacheService.set(
+      cacheKey,
+      { flashcards: flashcardsArray, flashcardDecks: newDecks },
+      CacheTTL.AI_CONTENT
+    );
+    await CacheService.invalidateDocumentDerived(docId, document.uploadedBy?.toString());
 
     res.status(200).json({
       success: true,
@@ -291,7 +385,8 @@ export const generateFlashcardsController = async (
 
 export const submitQuizAttempt = async (req: any, res: any) => {
   try {
-    const document = await Document.findById(req.params.id);
+    const docId = String(req.params.id);
+    const document = await Document.findById(docId);
 
     if (!document) {
       return res.status(404).json({
@@ -348,9 +443,19 @@ export const submitQuizAttempt = async (req: any, res: any) => {
       attempts: [...(quiz.attempts || []), attempt]
     };
 
-    await Document.findByIdAndUpdate(req.params.id, {
+    await Document.findByIdAndUpdate(docId, {
       $set: { quizzes: updatedQuizzes }
     });
+
+    await CacheService.set(
+      CacheKeys.docQuizzes(docId),
+      {
+        quiz: updatedQuizzes[updatedQuizzes.length - 1].questions,
+        quizzes: updatedQuizzes,
+      },
+      CacheTTL.AI_CONTENT
+    );
+    await CacheService.invalidateDocumentDerived(docId, document.uploadedBy?.toString());
 
     res.status(200).json({
       success: true,
@@ -393,7 +498,23 @@ export const generateMindMapController = async (
   res: Response
 ) => {
   try {
-    const document = await Document.findById(req.params.id);
+    const docId = String(req.params.id);
+    const regenerate = req.query.regenerate === "true";
+    const cacheKey = CacheKeys.docMindMaps(docId);
+
+    if (!regenerate) {
+      const cached = await CacheService.get<{ mindMap: any; mindMaps: any[] }>(cacheKey);
+      if (cached) {
+        return res.status(200).json({
+          success: true,
+          mindMap: cached.mindMap,
+          mindMaps: cached.mindMaps,
+          cached: true,
+        });
+      }
+    }
+
+    const document = await Document.findById(docId);
 
     if (!document) {
       return res.status(404).json({
@@ -401,17 +522,21 @@ export const generateMindMapController = async (
       });
     }
 
-    const regenerate = req.query.regenerate === "true";
-
     // Cache-first: return stored mind map if it exists
     const existingMindMaps = document.mindMaps && document.mindMaps.length > 0
       ? document.mindMaps
       : (document.mindMap ? [{ data: document.mindMap, createdAt: document.createdAt }] : []);
 
     if (existingMindMaps.length > 0 && !regenerate) {
+      const latestMindMap = existingMindMaps[existingMindMaps.length - 1].data;
+      await CacheService.set(
+        cacheKey,
+        { mindMap: latestMindMap, mindMaps: existingMindMaps },
+        CacheTTL.AI_CONTENT
+      );
       return res.status(200).json({
         success: true,
-        mindMap: existingMindMaps[existingMindMaps.length - 1].data,
+        mindMap: latestMindMap,
         mindMaps: existingMindMaps,
         cached: true,
       });
@@ -507,13 +632,20 @@ export const generateMindMapController = async (
     const newMindMaps = [...existingMindMaps, newMindMapObj];
 
     // Save to MongoDB
-    await Document.findByIdAndUpdate(req.params.id, {
+    await Document.findByIdAndUpdate(docId, {
       $set: {
         mindMap: mindMapData,
         mindMaps: newMindMaps,
         lastGeneratedAt: new Date(),
       },
     });
+
+    await CacheService.set(
+      cacheKey,
+      { mindMap: mindMapData, mindMaps: newMindMaps },
+      CacheTTL.AI_CONTENT
+    );
+    await CacheService.delete(CacheKeys.docDetails(docId));
 
     res.status(200).json({
       success: true,
@@ -568,6 +700,7 @@ export const saveChatSession = async (req: any, res: any) => {
     }
 
     await Document.findByIdAndUpdate(req.params.id, { $set: { chats } });
+    await CacheService.delete(CacheKeys.docDetails(String(req.params.id)));
 
     res.status(200).json({ success: true, chats });
   } catch (error: any) {
@@ -595,6 +728,7 @@ export const deleteChatSession = async (req: any, res: any) => {
     chats.splice(index, 1);
 
     await Document.findByIdAndUpdate(req.params.id, { $set: { chats } });
+    await CacheService.delete(CacheKeys.docDetails(String(req.params.id)));
 
     res.status(200).json({ success: true, chats });
   } catch (error: any) {

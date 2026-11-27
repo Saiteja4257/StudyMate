@@ -5,6 +5,7 @@ import {
   generateModuleContent,
   askStudySpaceTutor,
 } from "../services/studySpaceAiService";
+import { CacheKeys, CacheService, CacheTTL } from "../services/cache.service";
 
 export const generateStudySpace = async (req: Request, res: Response) => {
   try {
@@ -48,6 +49,10 @@ export const generateStudySpace = async (req: Request, res: Response) => {
 
     await newStudySpace.save();
 
+    if (userId) {
+      await CacheService.delete(CacheKeys.userStudySpaces(userId.toString()));
+    }
+
     res.status(201).json(newStudySpace);
   } catch (error) {
     console.error("Error generating study space:", error);
@@ -57,8 +62,18 @@ export const generateStudySpace = async (req: Request, res: Response) => {
 
 export const getStudySpaces = async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user?.id;
-    const spaces = await StudySpace.find({ userId }).sort({ createdAt: -1 });
+    const userId = (req as any).user?.id?.toString();
+    if (userId) {
+      const cached = await CacheService.get(CacheKeys.userStudySpaces(userId));
+      if (cached) {
+        return res.status(200).json(cached);
+      }
+    }
+
+    const spaces = await StudySpace.find({ userId }).sort({ createdAt: -1 }).lean();
+    if (userId) {
+      await CacheService.set(CacheKeys.userStudySpaces(userId), spaces, CacheTTL.SHORT);
+    }
     res.status(200).json(spaces);
   } catch (error) {
     console.error("Error fetching study spaces:", error);
@@ -68,12 +83,24 @@ export const getStudySpaces = async (req: Request, res: Response) => {
 
 export const getStudySpaceById = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
-    const userId = (req as any).user?.id;
+    const id = String(req.params.id);
+    const userId = (req as any).user?.id?.toString();
+    const cacheKey = userId ? CacheKeys.studySpace(userId, id) : null;
+
+    if (cacheKey) {
+      const cached = await CacheService.get(cacheKey);
+      if (cached) {
+        return res.status(200).json(cached);
+      }
+    }
     
-    const space = await StudySpace.findOne({ _id: id, userId });
+    const space = await StudySpace.findOne({ _id: id, userId }).lean();
     if (!space) {
       return res.status(404).json({ message: "Study space not found" });
+    }
+
+    if (cacheKey) {
+      await CacheService.set(cacheKey, space, CacheTTL.DOCUMENT);
     }
     
     res.status(200).json(space);
@@ -85,15 +112,23 @@ export const getStudySpaceById = async (req: Request, res: Response) => {
 
 export const getModuleContent = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
-    const userId = (req as any).user?.id;
+    const id = String(req.params.id);
+    const moduleId = String(req.params.moduleId);
+    const userId = (req as any).user?.id?.toString();
+    const cacheKey = userId ? CacheKeys.studySpaceModule(userId, id, moduleId) : null;
+
+    if (cacheKey) {
+      const cached = await CacheService.get(cacheKey);
+      if (cached) {
+        return res.status(200).json(cached);
+      }
+    }
     
     const space = await StudySpace.findOne({ _id: id, userId });
     if (!space) {
       return res.status(404).json({ message: "Study space not found" });
     }
     
-    const moduleId = req.params.moduleId as string;
     const module = space.modules.id(moduleId);
     if (!module) {
       return res.status(404).json({ message: "Module not found" });
@@ -101,7 +136,11 @@ export const getModuleContent = async (req: Request, res: Response) => {
     
     // If already generated, return it
     if (module.contentGenerated) {
-      return res.status(200).json(module);
+      const plainModule = module.toObject ? module.toObject() : module;
+      if (cacheKey) {
+        await CacheService.set(cacheKey, plainModule, CacheTTL.AI_CONTENT);
+      }
+      return res.status(200).json(plainModule);
     }
     
     // Generate content lazily
@@ -131,8 +170,17 @@ export const getModuleContent = async (req: Request, res: Response) => {
     module.contentGenerated = true;
     
     await space.save();
+
+    const plainModule = module.toObject ? module.toObject() : module;
+    if (cacheKey && userId) {
+      await CacheService.set(cacheKey, plainModule, CacheTTL.AI_CONTENT);
+      await CacheService.deleteMany([
+        CacheKeys.studySpace(userId, id),
+        CacheKeys.userStudySpaces(userId),
+      ]);
+    }
     
-    res.status(200).json(module);
+    res.status(200).json(plainModule);
   } catch (error) {
     console.error("Error generating module content:", error);
     res.status(500).json({ message: "Internal server error" });
@@ -141,16 +189,16 @@ export const getModuleContent = async (req: Request, res: Response) => {
 
 export const updateModuleProgress = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = String(req.params.id);
+    const moduleId = String(req.params.moduleId);
     const { completed } = req.body;
-    const userId = (req as any).user?.id;
+    const userId = (req as any).user?.id?.toString();
     
     const space = await StudySpace.findOne({ _id: id, userId });
     if (!space) {
       return res.status(404).json({ message: "Study space not found" });
     }
     
-    const moduleId = req.params.moduleId as string;
     const module = space.modules.id(moduleId);
     if (!module) {
       return res.status(404).json({ message: "Module not found" });
@@ -163,6 +211,14 @@ export const updateModuleProgress = async (req: Request, res: Response) => {
     space.progress = Math.round((completedCount / space.modules.length) * 100);
     
     await space.save();
+
+    if (userId) {
+      await CacheService.deleteMany([
+        CacheKeys.userStudySpaces(userId),
+        CacheKeys.studySpace(userId, id),
+        CacheKeys.studySpaceModule(userId, id, moduleId),
+      ]);
+    }
     
     res.status(200).json(space);
   } catch (error) {
@@ -173,12 +229,20 @@ export const updateModuleProgress = async (req: Request, res: Response) => {
 
 export const deleteStudySpace = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
-    const userId = (req as any).user?.id;
+    const id = String(req.params.id);
+    const userId = (req as any).user?.id?.toString();
     
     const result = await StudySpace.deleteOne({ _id: id, userId });
     if (result.deletedCount === 0) {
       return res.status(404).json({ message: "Study space not found" });
+    }
+
+    if (userId) {
+      await CacheService.deleteMany([
+        CacheKeys.userStudySpaces(userId),
+        CacheKeys.studySpace(userId, id),
+      ]);
+      await CacheService.deleteByPrefix(`studyspace:${userId}:${id}:`);
     }
     
     res.status(200).json({ message: "Study space deleted successfully" });
