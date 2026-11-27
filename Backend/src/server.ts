@@ -31,6 +31,12 @@ app.use("/api/ai", aiRoutes);
 app.use("/api/analytics", analyticsRoutes);
 app.use("/api/study-plan", studyPlanRoutes);
 app.use("/api/study-space", studySpaceRoutes);
+app.get("/api/health", (req, res) => {
+    res.status(200).json({
+        status: "ok",
+        uptime: process.uptime()
+    });
+});
 
 app.get("/", (_, res) => {
   res.send("StudyMate API Running");

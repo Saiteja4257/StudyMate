@@ -5,6 +5,7 @@ import {
   Navigate,
 } from "react-router-dom";
 import React from 'react';
+import { useEffect } from "react";
 
 import Login from "./pages/Login";
 import Register from "./pages/Register";
@@ -26,6 +27,8 @@ const PublicRoute = ({ children }: { children: React.ReactNode }) => {
   if (isAuthenticated) return <Navigate to="/home" replace />;
   return <>{children}</>;
 };
+
+
 
 function AppRoutes() {
   return (
@@ -130,6 +133,10 @@ function AppRoutes() {
 }
 
 function App() {
+  useEffect(() => {
+        fetch(`${import.meta.env.VITE_API_URL}/health`)
+            .catch(() => {});
+    }, []);
   return (
     <AuthProvider>
       <BrowserRouter>
