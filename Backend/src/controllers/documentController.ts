@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import fs from "fs";
-import pdfParse from "pdf-parse";
+import { PDFParse } from "pdf-parse";
 import { Document } from "../models/Document";
 import { processDocumentForRAG } from "../services/ragService";
 import { uploadBufferToCloudinary, deleteFromCloudinary } from "../config/cloudinary";
@@ -18,7 +18,17 @@ export const uploadDocument = async (
     }
 
     // 1. Parse PDF directly from memory buffer
-    const pdfData = await pdfParse(req.file.buffer);
+    const parser = new PDFParse({
+    data: req.file.buffer
+});
+
+const pdfData = await (async () => {
+    try {
+        return await parser.getText();
+    } finally {
+        await parser.destroy();
+    }
+})();
 
     // 2. Upload buffer to Cloudinary
     const { secure_url, public_id } = await uploadBufferToCloudinary(
