@@ -19,7 +19,7 @@ const Register = () => {
   const [error, setError] = useState('');
   const [unverifiedEmail, setUnverifiedEmail] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
+
   const { register, verifyEmailAndLogin, googleLoginWithCredential } = useAuth();
   const navigate = useNavigate();
 
@@ -34,7 +34,7 @@ const Register = () => {
     setError('');
     setStatusMessage('');
     setUnverifiedEmail('');
-    
+
     if (!name || !email || !password || !confirmPassword) {
       setError('Please fill in all fields');
       return;
@@ -126,53 +126,36 @@ const Register = () => {
     }
   };
 
-  return (
-    <div className="relative min-h-screen flex items-center justify-center overflow-hidden bg-dark">
-      {/* Background gradients */}
-      <div className="absolute top-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-secondary/20 blur-[120px]"></div>
-      <div className="absolute bottom-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-primary/20 blur-[120px]"></div>
+  // ── Verification step (inline after successful registration) ──
+  if (step === 'verify') {
+    return (
+      <div className="relative min-h-screen flex items-center justify-center overflow-hidden bg-dark">
+        <div className="absolute top-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-secondary/20 blur-[120px]" />
+        <div className="absolute bottom-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-primary/20 blur-[120px]" />
 
-      <div className="z-10 w-full max-w-md p-8 glass-strong animate-slide-up mx-4">
-        <div className="flex flex-col items-center mb-8 text-center">
-          <div className="flex items-center gap-2 mb-2">
-            <Sparkles className="text-primary w-8 h-8" />
-            <h1 className="text-3xl font-bold gradient-text">
-              {step === 'verify' ? 'Verify Email' : 'Create Account'}
-            </h1>
+        <div className="z-10 w-full max-w-md p-8 glass-strong animate-slide-up mx-4">
+          <div className="flex flex-col items-center mb-8 text-center">
+            <div className="flex items-center gap-2 mb-2">
+              <Sparkles className="text-primary w-8 h-8" />
+              <h1 className="text-3xl font-bold gradient-text">Verify Email</h1>
+            </div>
+            <p className="text-gray-400 text-sm">
+              Enter the 6-digit code sent to {verificationEmail || email}
+            </p>
           </div>
-          <p className="text-gray-400 text-sm">
-            {step === 'verify'
-              ? `Enter the 6-digit code sent to ${verificationEmail || email}`
-              : 'Join StudyMate AI today'}
-          </p>
-        </div>
 
-        {error && (
-          <div className="mb-4 p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm text-center">
-            <p>{error}</p>
-            {unverifiedEmail && step === 'form' && (
-              <button
-                type="button"
-                onClick={() => {
-                  setVerificationEmail(unverifiedEmail);
-                  setError('');
-                  setStep('verify');
-                }}
-                className="mt-2 text-primary hover:underline font-medium"
-              >
-                Verify email now →
-              </button>
-            )}
-          </div>
-        )}
+          {error && (
+            <div className="mb-4 p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm text-center">
+              <p>{error}</p>
+            </div>
+          )}
 
-        {statusMessage && (
-          <div className="mb-4 p-3 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-300 text-sm text-center">
-            {statusMessage}
-          </div>
-        )}
+          {statusMessage && (
+            <div className="mb-4 p-3 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-300 text-sm text-center">
+              {statusMessage}
+            </div>
+          )}
 
-        {step === 'verify' ? (
           <form onSubmit={handleVerifyCode} className="flex flex-col gap-4">
             <div>
               <label className="block text-xs font-medium text-gray-400 mb-1.5">
@@ -197,11 +180,11 @@ const Register = () => {
               className="btn-primary mt-2 py-3 flex justify-center items-center gap-2 h-12"
             >
               {isSubmitting ? (
-                <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" />
               ) : (
                 <>
                   <MailCheck className="w-5 h-5" />
-                  <span>Verify & Create Account</span>
+                  <span>Verify &amp; Create Account</span>
                 </>
               )}
             </button>
@@ -235,10 +218,60 @@ const Register = () => {
               </button>
             </div>
           </form>
-        ) : (
+
+          <p className="mt-6 text-center text-gray-400">
+            Already have an account?{' '}
+            <Link to="/" className="text-primary hover:text-primary-light transition-colors">
+              Sign in
+            </Link>
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Registration form step ──
+  return (
+    <div className="relative min-h-screen flex items-center justify-center overflow-hidden bg-dark">
+      <div className="absolute top-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-secondary/20 blur-[120px]" />
+      <div className="absolute bottom-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-primary/20 blur-[120px]" />
+
+      <div className="z-10 w-full max-w-md p-8 glass-strong animate-slide-up mx-4">
+        <div className="flex flex-col items-center mb-8 text-center">
+          <div className="flex items-center gap-2 mb-2">
+            <Sparkles className="text-primary w-8 h-8" />
+            <h1 className="text-3xl font-bold gradient-text">Create Account</h1>
+          </div>
+          <p className="text-gray-400 text-sm">Join StudyMate AI today</p>
+        </div>
+
+        {error && (
+          <div className="mb-4 p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm text-center">
+            <p>{error}</p>
+            {unverifiedEmail && (
+              <button
+                type="button"
+                onClick={() => {
+                  setVerificationEmail(unverifiedEmail);
+                  setError('');
+                  setStep('verify');
+                }}
+                className="mt-2 text-primary hover:underline font-medium"
+              >
+                Verify email now →
+              </button>
+            )}
+          </div>
+        )}
+
+        {statusMessage && (
+          <div className="mb-4 p-3 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-300 text-sm text-center">
+            {statusMessage}
+          </div>
+        )}
+
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div className="relative">
-            {/* <User className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" /> */}
             <input
               type="text"
               placeholder="Full Name"
@@ -249,7 +282,6 @@ const Register = () => {
           </div>
 
           <div className="relative">
-            {/* <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-8 h-8" /> */}
             <input
               type="email"
               placeholder="Email address"
@@ -260,7 +292,6 @@ const Register = () => {
           </div>
 
           <div className="relative">
-            {/* <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-8 h-8" /> */}
             <input
               type="password"
               placeholder="Password"
@@ -271,7 +302,6 @@ const Register = () => {
           </div>
 
           <div className="relative">
-            {/* <ShieldCheck className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-8 h-8" /> */}
             <input
               type="password"
               placeholder="Confirm Password"
@@ -287,16 +317,16 @@ const Register = () => {
             className="btn-primary mt-4 py-3 flex justify-center items-center h-12"
           >
             {isSubmitting ? (
-              <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+              <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" />
             ) : (
               'Create Account'
             )}
           </button>
 
           <div className="relative flex items-center py-2">
-            <div className="flex-grow border-t border-gray-700"></div>
+            <div className="flex-grow border-t border-gray-700" />
             <span className="flex-shrink-0 mx-4 text-gray-500 text-sm">Or continue with</span>
-            <div className="flex-grow border-t border-gray-700"></div>
+            <div className="flex-grow border-t border-gray-700" />
           </div>
 
           <div className="flex justify-center">
@@ -309,7 +339,6 @@ const Register = () => {
             />
           </div>
         </form>
-        )}
 
         <p className="mt-6 text-center text-gray-400">
           Already have an account?{' '}
