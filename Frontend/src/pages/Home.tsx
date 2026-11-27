@@ -72,9 +72,13 @@ const Home = () => {
       const res = await documentAPI.upload(formData);
       await fetchDocuments();
 
-    if (res.data.documentId) {
+    if (res.data.ragCompleted === false) {
+    alert("PDF uploaded, but AI processing failed.");
+}
+
+if (res.data.documentId) {
     navigate(`/space/${res.data.documentId}`);
-    }
+}
     } catch (error) {
       console.error('Upload failed', error);
     } finally {

@@ -17,57 +17,112 @@ export const uploadDocument = async (
       });
     }
 
-    // 1. Parse PDF directly from memory buffer
-    const parser = new PDFParse({
-    data: req.file.buffer
-});
+    const userId = (req.user?.id || req.user?._id)?.toString();
 
-const pdfData = await (async () => {
-    try {
-        return await parser.getText();
-    } finally {
-        await parser.destroy();
+    if (!userId) {
+      return res.status(401).json({
+        message: "Unauthorized",
+      });
     }
-})();
 
-    // 2. Upload buffer to Cloudinary
-    const { secure_url, public_id } = await uploadBufferToCloudinary(
-      req.file.buffer,
-      req.file.originalname
-    );
+    // 1. Validate PDF
+    const buffer = req.file.buffer;
 
-    // 3. Save document with Cloudinary URL and public_id
+    if (!buffer.subarray(0, 1024).includes("%PDF-")) {
+      return res.status(400).json({
+        message: "Invalid PDF file",
+      });
+    }
+
+    // 2. Parse PDF
+    const parser = new PDFParse({
+      data: new Uint8Array(buffer),
+    });
+
+    const pdfData = await (async () => {
+      try {
+        return await parser.getText();
+      } finally {
+        await parser.destroy();
+      }
+    })();
+
+    console.log("PDF parsing completed");
+
+    if (!pdfData.text.trim()) {
+      return res.status(422).json({
+        message: "No readable text found in PDF",
+      });
+    }
+
+    // 3. Upload to Cloudinary
+    const { secure_url, public_id } =
+      await uploadBufferToCloudinary(
+        buffer,
+        req.file.originalname
+      );
+
+    console.log("Cloudinary upload completed");
+
+    // 4. Save in MongoDB
     const document = await Document.create({
       title: req.file.originalname,
       filePath: secure_url,
-      cloudinaryPublicId: public_id, 
+      cloudinaryPublicId: public_id,
       extractedText: pdfData.text,
-      uploadedBy: req.user?.id,
+      uploadedBy: userId,
     });
 
-    // 4. Run RAG chunking and embeddings
-    await processDocumentForRAG(
-      document._id.toString(),
-      document.extractedText
-    );
+    console.log("Document saved:", document._id);
 
-    const userId = req.user?.id || req.user?._id;
-    if (userId) {
-      await CacheService.deleteMany([
-        CacheKeys.userDocs(userId.toString()),
-        CacheKeys.dashboardAnalytics(userId.toString()),
-      ]);
+    // 5. Immediately invalidate Redis cache
+    await CacheService.deleteMany([
+      CacheKeys.userDocs(userId),
+      CacheKeys.dashboardAnalytics(userId),
+    ]);
+
+    console.log("Redis cache invalidated");
+
+    // 6. Run RAG processing
+    let ragCompleted = false;
+
+    try {
+      console.log("RAG processing started");
+
+      await processDocumentForRAG(
+        document._id.toString(),
+        document.extractedText
+      );
+
+      ragCompleted = true;
+
+      console.log("RAG processing completed");
+    } catch (ragError) {
+      console.error("RAG processing failed:", ragError);
     }
 
-    res.status(200).json({
-      message: "PDF Uploaded and Parsed Successfully",
+    // 7. Invalidate caches after RAG processing
+    await CacheService.deleteMany([
+      CacheKeys.userDocs(userId),
+      CacheKeys.dashboardAnalytics(userId),
+      CacheKeys.docDetails(document._id.toString()),
+    ]);
+
+    // 8. Return response
+    return res.status(201).json({
+      message: ragCompleted
+        ? "PDF uploaded and processed successfully"
+        : "PDF uploaded, but AI processing failed",
       documentId: document._id,
       title: document.title,
       url: document.filePath,
+      ragCompleted,
     });
+
   } catch (error) {
     console.error("Upload Document Error:", error);
-    res.status(500).json({
+
+    return res.status(500).json({
       message: "Server Error during document upload",
     });
   }
