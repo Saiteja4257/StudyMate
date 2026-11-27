@@ -9,6 +9,7 @@ import { useEffect } from "react";
 
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import VerifyEmail from "./pages/VerifyEmail";
 import Home from "./pages/Home";
 import Workspace from "./pages/Workspace";
 import StudyPlanner from "./pages/StudyPlanner";
@@ -50,6 +51,8 @@ function AppRoutes() {
           </PublicRoute>
         }
       />
+
+      <Route path="/verify-email" element={<VerifyEmail />} />
 
       <Route
         path="/home"

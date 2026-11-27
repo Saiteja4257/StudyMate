@@ -1,10 +1,17 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { loginUser, registerUser, googleLogin } from '../services/authService';
+import { loginUser, registerUser, googleLogin, verifyEmail } from '../services/authService';
 
 export interface User {
   id: string;
   name: string;
   email: string;
+  isVerified?: boolean;
+}
+
+interface RegisterResult {
+  requiresVerification?: boolean;
+  email?: string;
+  message?: string;
 }
 
 interface AuthContextType {
@@ -13,7 +20,8 @@ interface AuthContextType {
   isAuthenticated: boolean;
   loading: boolean;
   login: (data: any) => Promise<void>;
-  register: (data: any) => Promise<void>;
+  register: (data: any) => Promise<RegisterResult>;
+  verifyEmailAndLogin: (payload: { token?: string; email?: string; code?: string }) => Promise<any>;
   googleLoginWithCredential: (credential: string) => Promise<void>;
   updateUser: (user: User) => void;
   logout: () => void;
@@ -45,12 +53,30 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     localStorage.setItem('studymate_user', JSON.stringify(response.user));
   };
 
-  const register = async (data: any) => {
+  const register = async (data: any): Promise<RegisterResult> => {
     const response = await registerUser(data);
-    setToken(response.token);
-    setUser(response.user);
-    localStorage.setItem('studymate_token', response.token);
-    localStorage.setItem('studymate_user', JSON.stringify(response.user));
+    if (response.token && response.user) {
+      setToken(response.token);
+      setUser(response.user);
+      localStorage.setItem('studymate_token', response.token);
+      localStorage.setItem('studymate_user', JSON.stringify(response.user));
+    }
+    return {
+      requiresVerification: response.requiresVerification,
+      email: response.email,
+      message: response.message,
+    };
+  };
+
+  const verifyEmailAndLogin = async (payload: { token?: string; email?: string; code?: string }) => {
+    const response = await verifyEmail(payload);
+    if (response.token && response.user) {
+      setToken(response.token);
+      setUser(response.user);
+      localStorage.setItem('studymate_token', response.token);
+      localStorage.setItem('studymate_user', JSON.stringify(response.user));
+    }
+    return response;
   };
 
   const googleLoginWithCredential = async (credential: string) => {
@@ -74,7 +100,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, isAuthenticated: !!token, loading, login, register, googleLoginWithCredential, updateUser, logout }}>
+    <AuthContext.Provider value={{ user, token, isAuthenticated: !!token, loading, login, register, verifyEmailAndLogin, googleLoginWithCredential, updateUser, logout }}>
       {children}
     </AuthContext.Provider>
   );

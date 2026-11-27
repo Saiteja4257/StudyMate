@@ -36,3 +36,17 @@ export const updatePassword = async (passwordData: { currentPassword?: string; n
   const response = await API.put('/auth/password', passwordData);
   return response.data;
 };
+
+export const verifyEmail = async (payload: {
+  token?: string;
+  email?: string;
+  code?: string;
+}) => {
+  const response = await API.post('/auth/verify-email', payload);
+  return response.data;
+};
+
+export const resendVerification = async (email: string) => {
+  const response = await API.post('/auth/resend-verification', { email });
+  return response.data;
+};

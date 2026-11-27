@@ -9,6 +9,7 @@ const Login = () => {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
+  const [unverifiedEmail, setUnverifiedEmail] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   const { login, googleLoginWithCredential } = useAuth();
@@ -18,6 +19,7 @@ const Login = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setUnverifiedEmail('');
     
     if (!email || !password) {
       setError('Please fill in all fields');
@@ -30,6 +32,9 @@ const Login = () => {
       navigate('/home');
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to login');
+      if (err.response?.data?.requiresVerification) {
+        setUnverifiedEmail(err.response.data.email || email.trim());
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -67,7 +72,18 @@ const Login = () => {
 
         {error && (
           <div className="mb-4 p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm text-center">
-            {error}
+            <p>{error}</p>
+            {unverifiedEmail && (
+              <button
+                type="button"
+                onClick={() =>
+                  navigate('/verify-email', { state: { email: unverifiedEmail } })
+                }
+                className="mt-2 text-primary hover:underline font-medium"
+              >
+                Verify email / Resend code →
+              </button>
+            )}
           </div>
         )}
 

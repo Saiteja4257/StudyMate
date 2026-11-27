@@ -31,7 +31,10 @@ const Profile = () => {
     try {
       const res = await updateProfile({ name, email });
       updateUser(res.user);
-      setProfileMsg({ type: 'success', text: 'Profile updated successfully!' });
+      setProfileMsg({
+        type: 'success',
+        text: res.message || 'Profile updated successfully!',
+      });
     } catch (error: any) {
       setProfileMsg({ 
         type: 'error', 
